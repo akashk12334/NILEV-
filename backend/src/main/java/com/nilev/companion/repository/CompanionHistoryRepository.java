@@ -20,4 +20,7 @@ public interface CompanionHistoryRepository extends JpaRepository<CompanionHisto
 
     @Query("SELECT COALESCE(SUM(h.xpGained), 0) FROM CompanionHistory h WHERE h.companion.id = :companionId")
     int sumXpGainedByCompanionId(@Param("companionId") Long companionId);
+
+    @Query("SELECT COUNT(h) FROM CompanionHistory h WHERE h.companion.id = :companionId AND h.eventType IN ('INTERACTION', 'LEVEL_UP') AND h.xpGained = 5 AND h.createdAt >= :startOfDay")
+    int countInteractionsToday(@Param("companionId") Long companionId, @Param("startOfDay") java.time.Instant startOfDay);
 }

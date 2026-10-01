@@ -28,6 +28,9 @@ public class CompanionResponse {
     private CompanionMood mood;
     private String moodEmoji;
     private String moodDescription;
+    private int dailyInteractionsCount;
+    private int maxDailyInteractions = 5;
+    private int dailyInteractionsRemaining = 5;
     private boolean isMine;
     private Instant createdAt;
     private Instant updatedAt;
@@ -35,6 +38,10 @@ public class CompanionResponse {
     public CompanionResponse() {}
 
     public static CompanionResponse fromEntity(Companion c, Long currentUserId) {
+        return fromEntity(c, currentUserId, 0);
+    }
+
+    public static CompanionResponse fromEntity(Companion c, Long currentUserId, int dailyInteractionsCount) {
         CompanionResponse r = new CompanionResponse();
         r.setId(c.getId());
         r.setUserId(c.getUser().getId());
@@ -61,6 +68,10 @@ public class CompanionResponse {
         r.setMood(c.getMood());
         r.setMoodEmoji(c.getMood().getEmoji());
         r.setMoodDescription(c.getMood().getDescription());
+
+        r.setDailyInteractionsCount(dailyInteractionsCount);
+        r.setMaxDailyInteractions(5);
+        r.setDailyInteractionsRemaining(Math.max(0, 5 - dailyInteractionsCount));
 
         r.setMine(c.getUser().getId().equals(currentUserId));
         r.setCreatedAt(c.getCreatedAt());
@@ -130,6 +141,15 @@ public class CompanionResponse {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public int getDailyInteractionsCount() { return dailyInteractionsCount; }
+    public void setDailyInteractionsCount(int dailyInteractionsCount) { this.dailyInteractionsCount = dailyInteractionsCount; }
+
+    public int getMaxDailyInteractions() { return maxDailyInteractions; }
+    public void setMaxDailyInteractions(int maxDailyInteractions) { this.maxDailyInteractions = maxDailyInteractions; }
+
+    public int getDailyInteractionsRemaining() { return dailyInteractionsRemaining; }
+    public void setDailyInteractionsRemaining(int dailyInteractionsRemaining) { this.dailyInteractionsRemaining = dailyInteractionsRemaining; }
 
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }

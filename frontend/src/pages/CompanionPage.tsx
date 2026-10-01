@@ -107,6 +107,9 @@ export const CompanionPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
     } catch (err: any) {
       console.error("Interaction failed:", err);
+      const msg = err?.response?.data?.message || "Interaction limit reached or server unavailable.";
+      setToastMessage(`✨ ${msg}`);
+      setTimeout(() => setToastMessage(null), 4000);
     } finally {
       setIsInteracting(false);
     }

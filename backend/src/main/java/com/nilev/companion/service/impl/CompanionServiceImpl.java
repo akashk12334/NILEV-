@@ -19,7 +19,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,7 +63,10 @@ public class CompanionServiceImpl implements CompanionService {
             companion = companionRepo.save(companion);
         }
 
-        return CompanionResponse.fromEntity(companion, currentUserId);
+        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
+        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+
+        return CompanionResponse.fromEntity(companion, currentUserId, todayInteractions);
     }
 
     @Override
@@ -90,7 +95,9 @@ public class CompanionServiceImpl implements CompanionService {
                 companion.getAnimalType().getEmoji()
         ));
 
-        return CompanionResponse.fromEntity(companion, currentUserId);
+        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
+        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+        return CompanionResponse.fromEntity(companion, currentUserId, todayInteractions);
     }
 
     @Override
@@ -106,7 +113,9 @@ public class CompanionServiceImpl implements CompanionService {
         }
 
         companionRepo.save(companion);
-        return CompanionResponse.fromEntity(companion, currentUserId);
+        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
+        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+        return CompanionResponse.fromEntity(companion, currentUserId, todayInteractions);
     }
 
     @Override
@@ -120,7 +129,9 @@ public class CompanionServiceImpl implements CompanionService {
         Companion companion = companionRepo.findByUserId(partnerId)
                 .orElseThrow(() -> new NilevApiException("Partner has not chosen a companion yet", HttpStatus.NOT_FOUND));
 
-        return CompanionResponse.fromEntity(companion, currentUserId);
+        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
+        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+        return CompanionResponse.fromEntity(companion, currentUserId, todayInteractions);
     }
 
     @Override
@@ -139,6 +150,17 @@ public class CompanionServiceImpl implements CompanionService {
     public CompanionResponse interact(Long currentUserId) {
         Companion companion = companionRepo.findByUserId(currentUserId)
                 .orElseGet(() -> createDefaultCompanion(currentUserId));
+
+        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
+        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+
+        if (todayInteractions >= 5) {
+            throw new NilevApiException(
+                    "Daily bonding limit reached (5/5)! " + companion.getName() + " is well-nurtured for today. Complete your habits (+15 XP) to level up further ✨",
+                    HttpStatus.BAD_REQUEST,
+                    "DAILY_BOND_LIMIT_REACHED"
+            );
+        }
 
         companion.setHappiness(Math.min(100, companion.getHappiness() + 10));
         companion.setEnergy(Math.min(100, companion.getEnergy() + 5));
@@ -180,7 +202,7 @@ public class CompanionServiceImpl implements CompanionService {
             ));
         }
 
-        return CompanionResponse.fromEntity(companion, currentUserId);
+        return CompanionResponse.fromEntity(companion, currentUserId, todayInteractions + 1);
     }
 
     @Override

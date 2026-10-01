@@ -31,8 +31,13 @@ export const CompanionHeroCard: React.FC<CompanionHeroCardProps> = ({
   const [petAnimation, setPetAnimation] = useState(false);
   const animalMeta = ANIMAL_DETAILS[companion.animalType] || ANIMAL_DETAILS.WOLF;
 
+  const dailyRemaining = companion.dailyInteractionsRemaining !== undefined
+    ? companion.dailyInteractionsRemaining
+    : 5;
+  const isLimitReached = dailyRemaining <= 0;
+
   const handleBondClick = async () => {
-    if (isPartner || isInteracting || !onInteract) return;
+    if (isPartner || isInteracting || !onInteract || isLimitReached) return;
     setPetAnimation(true);
     try {
       await onInteract();
@@ -250,18 +255,43 @@ export const CompanionHeroCard: React.FC<CompanionHeroCardProps> = ({
           {/* Bottom Actions */}
           <div className="pt-2">
             {!isPartner ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  onClick={handleBondClick}
-                  disabled={isInteracting}
-                  className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-semibold shadow-lg shadow-indigo-600/30 px-6 py-2.5 rounded-xl transition-all duration-300 active:scale-95"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  {isInteracting ? "Bonding..." : `Nurture & Bond with ${companion.name}`}
-                </Button>
-                <span className="text-xs text-slate-400 flex items-center">
+              <div className="flex flex-col space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    onClick={handleBondClick}
+                    disabled={isInteracting || isLimitReached}
+                    className={`relative overflow-hidden font-semibold shadow-lg px-6 py-2.5 rounded-xl transition-all duration-300 active:scale-95 ${
+                      isLimitReached
+                        ? "bg-slate-800 text-slate-400 border border-white/10 cursor-not-allowed opacity-75"
+                        : "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white shadow-indigo-600/30"
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {isInteracting
+                      ? "Bonding..."
+                      : isLimitReached
+                      ? "Daily Limit Reached (5/5) ✨"
+                      : `Nurture & Bond with ${companion.name}`}
+                  </Button>
+
+                  <span
+                    className={`text-xs font-mono px-3 py-1.5 rounded-xl border ${
+                      isLimitReached
+                        ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-300"
+                        : "bg-indigo-950/60 border-indigo-500/30 text-indigo-300"
+                    }`}
+                  >
+                    {isLimitReached
+                      ? "All 5 daily bonds completed ✨"
+                      : `${dailyRemaining}/5 daily bonds left (+5 XP)`}
+                  </span>
+                </div>
+
+                <span className="text-xs text-slate-400 flex items-center pt-0.5">
                   <Smile className="w-3.5 h-3.5 mr-1 text-pink-400" />
-                  Affection boosts mood & happiness
+                  {isLimitReached
+                    ? `${companion.name} is deeply cherished today! Complete habits with your partner (+15 XP each) to level up further.`
+                    : "Affection boosts mood & happiness (+5 XP per bond, 5 max daily)"}
                 </span>
               </div>
             ) : (

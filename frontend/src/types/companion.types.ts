@@ -38,6 +38,9 @@ export interface CompanionResponse {
   mood: CompanionMood;
   moodEmoji: string;
   moodDescription: string;
+  dailyInteractionsCount?: number;
+  maxDailyInteractions?: number;
+  dailyInteractionsRemaining?: number;
   isMine: boolean;
   createdAt: string;
   updatedAt: string;
