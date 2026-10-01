@@ -21,6 +21,10 @@ import { Avatar } from "../ui/Avatar";
 import { Badge } from "../ui/Badge";
 import { useAuth } from "../../hooks/useAuth";
 import { usePartner } from "../../hooks/usePartner";
+import { useHabits } from "../../hooks/useHabits";
+import { companionService } from "../../services/companion.service";
+import { surpriseService } from "../../services/surprise.service";
+import type { CompanionResponse } from "../../types";
 
 export interface NavItemConfig {
   label: string;
@@ -30,14 +34,14 @@ export interface NavItemConfig {
   badgeVariant?: "violet" | "emerald" | "amber" | "rose" | "indigo";
 }
 
-export const navItems: NavItemConfig[] = [
+export const baseNavItems: NavItemConfig[] = [
   { label: "Home", href: ROUTES.DASHBOARD, icon: LayoutDashboard },
-  { label: "Partner", href: ROUTES.PARTNER, icon: Users2, badge: "Couple", badgeVariant: "violet" },
-  { label: "Habits", href: ROUTES.HABITS, icon: CheckCircle2, badge: "3 today", badgeVariant: "emerald" },
+  { label: "Partner", href: ROUTES.PARTNER, icon: Users2 },
+  { label: "Habits", href: ROUTES.HABITS, icon: CheckCircle2 },
   { label: "Activity", href: ROUTES.ACTIVITY, icon: Activity },
   { label: "Goals", href: ROUTES.GOALS, icon: Target },
-  { label: "Companion", href: ROUTES.COMPANION, icon: Sparkles, badge: "Lvl 3", badgeVariant: "violet" },
-  { label: "Surprises", href: ROUTES.SURPRISES, icon: Gift, badge: "1 new", badgeVariant: "rose" },
+  { label: "Companion", href: ROUTES.COMPANION, icon: Sparkles },
+  { label: "Surprises", href: ROUTES.SURPRISES, icon: Gift },
   { label: "Analytics", href: ROUTES.ANALYTICS, icon: BarChart3 },
   { label: "Settings", href: ROUTES.SETTINGS, icon: Settings },
 ];
@@ -58,8 +62,88 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
   const { user } = useAuth();
   const { partnerStatus } = usePartner();
+  const { habits } = useHabits();
+  const [companion, setCompanion] = React.useState<CompanionResponse | null>(null);
+  const [unopenedSurprises, setUnopenedSurprises] = React.useState<number>(0);
+
   const isConnected = partnerStatus?.status === "CONNECTED";
   const partner = partnerStatus?.partner;
+
+  // Load real companion data
+  React.useEffect(() => {
+    let isMounted = true;
+    companionService
+      .getMyCompanion()
+      .then((c) => {
+        if (isMounted) setCompanion(c);
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Load real surprises count
+  React.useEffect(() => {
+    if (isConnected) {
+      let isMounted = true;
+      surpriseService
+        .getReceivedSurprises()
+        .then((res) => {
+          if (isMounted) {
+            const count = (res || []).filter((s) => s.status === "DELIVERED").length;
+            setUnopenedSurprises(count);
+          }
+        })
+        .catch(() => {});
+      return () => {
+        isMounted = false;
+      };
+    } else {
+      setUnopenedSurprises(0);
+    }
+  }, [isConnected]);
+
+  // Compute live dynamic badges based on REAL user data
+  const navItems = React.useMemo(() => {
+    const pendingHabitsToday = habits.filter((h) => !h.completedToday).length;
+
+    return baseNavItems.map((item) => {
+      // Partner badge: only show if actually connected
+      if (item.href === ROUTES.PARTNER && isConnected) {
+        return { ...item, badge: "Couple", badgeVariant: "violet" as const };
+      }
+
+      // Habits badge: only show if user has created habits
+      if (item.href === ROUTES.HABITS && habits.length > 0) {
+        return {
+          ...item,
+          badge: pendingHabitsToday > 0 ? `${pendingHabitsToday} today` : "Done",
+          badgeVariant: "emerald" as const,
+        };
+      }
+
+      // Companion badge: show actual real level (e.g. Lvl 1), or nothing if not loaded
+      if (item.href === ROUTES.COMPANION && companion?.level) {
+        return {
+          ...item,
+          badge: `Lvl ${companion.level}`,
+          badgeVariant: "violet" as const,
+        };
+      }
+
+      // Surprises badge: only show if there are actual unopened surprises
+      if (item.href === ROUTES.SURPRISES && unopenedSurprises > 0) {
+        return {
+          ...item,
+          badge: `${unopenedSurprises} new`,
+          badgeVariant: "rose" as const,
+        };
+      }
+
+      return item;
+    });
+  }, [isConnected, habits, companion?.level, unopenedSurprises]);
 
   // Close mobile drawer on route change
   React.useEffect(() => {
