@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { ROUTES } from "../../constants";
 import { useAuth } from "../../hooks/useAuth";
+import { usePartner } from "../../hooks/usePartner";
 import { Avatar } from "../ui/Avatar";
 import { Dropdown } from "../ui/Dropdown";
 import { Tooltip } from "../ui/Tooltip";
@@ -37,6 +38,9 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { partnerStatus } = usePartner();
+  const isConnected = partnerStatus?.status === "CONNECTED";
+  const partner = partnerStatus?.partner;
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const currentRouteInfo = routeTitles[location.pathname] || {
@@ -94,18 +98,29 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
       {/* Right: Partner Avatar, Notifications, User Avatar */}
       <div className="flex items-center space-x-2 sm:space-x-3.5 shrink-0">
         {/* Partner Status Pill */}
-        <Tooltip content="Paired with Maya (Active now) 💜" position="bottom">
-          <div className="hidden sm:flex items-center space-x-2 rounded-full border border-[rgba(168,85,247,0.22)] bg-[rgba(13,17,34,0.7)] px-2.5 py-1 backdrop-blur-md shadow-sm hover:border-violet-500/40 transition-colors">
-            <Avatar
-              fallback="M"
-              size="xs"
-              status="online"
-              partnerRing
-            />
-            <span className="text-xs font-medium text-slate-300">Maya</span>
-            <Sparkles className="h-3 w-3 text-pink-400" />
-          </div>
-        </Tooltip>
+        {isConnected && partner ? (
+          <Tooltip content={`Paired with ${partner.name} 💜`} position="bottom">
+            <div className="hidden sm:flex items-center space-x-2 rounded-full border border-[rgba(168,85,247,0.22)] bg-[rgba(13,17,34,0.7)] px-2.5 py-1 backdrop-blur-md shadow-sm hover:border-violet-500/40 transition-colors">
+              <Avatar
+                fallback={partner.name}
+                src={partner.avatarUrl || undefined}
+                size="xs"
+                status="online"
+                partnerRing
+              />
+              <span className="text-xs font-medium text-slate-300">{partner.name.split(" ")[0]}</span>
+              <Sparkles className="h-3 w-3 text-pink-400" />
+            </div>
+          </Tooltip>
+        ) : (
+          <Link
+            to={ROUTES.PARTNER}
+            className="hidden sm:flex items-center space-x-1.5 rounded-full border border-violet-500/30 bg-violet-600/10 px-3 py-1 text-xs font-medium text-violet-300 hover:bg-violet-600/20 hover:border-violet-500/50 transition-all"
+          >
+            <Sparkles className="h-3 w-3 text-violet-400" />
+            <span>Connect Partner</span>
+          </Link>
+        )}
 
         {/* Notifications Dropdown */}
         <NotificationDropdown />

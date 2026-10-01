@@ -1,5 +1,5 @@
 import * as React from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   CheckCircle2,
@@ -20,6 +20,7 @@ import { cn } from "../../utils/cn";
 import { Avatar } from "../ui/Avatar";
 import { Badge } from "../ui/Badge";
 import { useAuth } from "../../hooks/useAuth";
+import { usePartner } from "../../hooks/usePartner";
 
 export interface NavItemConfig {
   label: string;
@@ -56,6 +57,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const location = useLocation();
   const { user } = useAuth();
+  const { partnerStatus } = usePartner();
+  const isConnected = partnerStatus?.status === "CONNECTED";
+  const partner = partnerStatus?.partner;
 
   // Close mobile drawer on route change
   React.useEffect(() => {
@@ -186,26 +190,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Partner Connection Card */}
         {!isCollapsed && (
           <div className="rounded-xl border border-[rgba(147,130,255,0.12)] bg-[rgba(15,20,38,0.6)] p-2.5 backdrop-blur-md">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Avatar
-                  fallback="M"
-                  size="xs"
-                  partnerRing
-                  status="online"
-                />
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-semibold text-white">
-                    Partner: Maya
-                  </span>
-                  <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-                    Active now
+            {isConnected && partner ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Avatar
+                    fallback={partner.name}
+                    src={partner.avatarUrl || undefined}
+                    size="xs"
+                    partnerRing
+                    status="online"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-semibold text-white">
+                      Partner: {partner.name.split(" ")[0]}
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                      Connected
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xs text-pink-400">💜</span>
+              </div>
+            ) : (
+              <Link
+                to={ROUTES.PARTNER}
+                className="flex items-center justify-between group p-1 text-slate-400 hover:text-white transition-colors"
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="h-6 w-6 rounded-full border border-dashed border-violet-500/40 flex items-center justify-center text-violet-400 text-xs">
+                    +
+                  </div>
+                  <span className="text-[11px] font-medium text-slate-300 group-hover:text-violet-300">
+                    Connect Partner
                   </span>
                 </div>
-              </div>
-              <span className="text-xs text-pink-400">💜</span>
-            </div>
+                <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+              </Link>
+            )}
           </div>
         )}
 
