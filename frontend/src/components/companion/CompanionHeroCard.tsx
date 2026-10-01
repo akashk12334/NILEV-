@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { CompanionResponse } from "../../types";
 import { AnimalArtwork, ANIMAL_DETAILS } from "./AnimalArtwork";
 import { Badge, Button, ProgressBar } from "../ui";
@@ -29,18 +29,57 @@ export const CompanionHeroCard: React.FC<CompanionHeroCardProps> = ({
   isInteracting = false,
 }) => {
   const [petAnimation, setPetAnimation] = useState(false);
+  const [cooldown, setCooldown] = useState(false);
   const animalMeta = ANIMAL_DETAILS[companion.animalType] || ANIMAL_DETAILS.WOLF;
 
-  const dailyRemaining = companion.dailyInteractionsRemaining !== undefined
-    ? companion.dailyInteractionsRemaining
-    : 5;
+  const todayKey = new Date().toISOString().split("T")[0];
+  const storageKey = companion?.id ? `nilev_daily_bonds_${companion.id}_${todayKey}` : null;
+
+  const [localBondsCount, setLocalBondsCount] = useState<number>(() => {
+    if (!storageKey) return companion.dailyInteractionsCount || 0;
+    const saved = localStorage.getItem(storageKey);
+    return saved !== null ? parseInt(saved, 10) : (companion.dailyInteractionsCount || 0);
+  });
+
+  useEffect(() => {
+    if (companion.dailyInteractionsCount !== undefined && storageKey) {
+      const serverCount = companion.dailyInteractionsCount;
+      const localCount = parseInt(localStorage.getItem(storageKey) || "0", 10);
+      const maxC = Math.max(serverCount, localCount);
+      setLocalBondsCount(maxC);
+      localStorage.setItem(storageKey, String(maxC));
+    }
+  }, [companion.dailyInteractionsCount, storageKey]);
+
+  const maxBonds = companion.maxDailyInteractions || 5;
+  const effectiveBondsCount = companion.dailyInteractionsCount !== undefined
+    ? Math.max(companion.dailyInteractionsCount, localBondsCount)
+    : localBondsCount;
+  const dailyRemaining = Math.max(0, maxBonds - effectiveBondsCount);
   const isLimitReached = dailyRemaining <= 0;
 
   const handleBondClick = async () => {
-    if (isPartner || isInteracting || !onInteract || isLimitReached) return;
+    if (isPartner || isInteracting || !onInteract || isLimitReached || cooldown) return;
+
+    // Immediately increment local count to prevent spamming
+    const nextCount = effectiveBondsCount + 1;
+    setLocalBondsCount(nextCount);
+    if (storageKey) {
+      localStorage.setItem(storageKey, String(nextCount));
+    }
+
     setPetAnimation(true);
+    setCooldown(true);
+    setTimeout(() => setCooldown(false), 2000);
+
     try {
       await onInteract();
+    } catch (err: any) {
+      // If server returned limit reached error, lock to max
+      if (storageKey) {
+        localStorage.setItem(storageKey, String(maxBonds));
+      }
+      setLocalBondsCount(maxBonds);
     } finally {
       setTimeout(() => setPetAnimation(false), 1200);
     }
@@ -259,7 +298,7 @@ export const CompanionHeroCard: React.FC<CompanionHeroCardProps> = ({
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
                     onClick={handleBondClick}
-                    disabled={isInteracting || isLimitReached}
+                    disabled={isInteracting || isLimitReached || cooldown}
                     className={`relative overflow-hidden font-semibold shadow-lg px-6 py-2.5 rounded-xl transition-all duration-300 active:scale-95 ${
                       isLimitReached
                         ? "bg-slate-800 text-slate-400 border border-white/10 cursor-not-allowed opacity-75"
@@ -269,6 +308,8 @@ export const CompanionHeroCard: React.FC<CompanionHeroCardProps> = ({
                     <Sparkles className="w-4 h-4 mr-2" />
                     {isInteracting
                       ? "Bonding..."
+                      : cooldown
+                      ? "Affection Sent ✨"
                       : isLimitReached
                       ? "Daily Limit Reached (5/5) ✨"
                       : `Nurture & Bond with ${companion.name}`}

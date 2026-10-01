@@ -63,9 +63,7 @@ public class CompanionServiceImpl implements CompanionService {
             companion = companionRepo.save(companion);
         }
 
-        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
-        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
-
+        int todayInteractions = getAndSyncDailyInteractionsCount(companion);
         return CompanionResponse.fromEntity(companion, currentUserId, todayInteractions);
     }
 
@@ -146,13 +144,30 @@ public class CompanionServiceImpl implements CompanionService {
                 .collect(Collectors.toList());
     }
 
+    private int getAndSyncDailyInteractionsCount(Companion companion) {
+        LocalDate today = LocalDate.now();
+        if (companion.getLastInteractionDate() == null || !companion.getLastInteractionDate().isEqual(today)) {
+            companion.setLastInteractionDate(today);
+            companion.setDailyInteractionsCount(0);
+            companionRepo.save(companion);
+            return 0;
+        }
+        Instant startOfDay = today.atStartOfDay(ZoneOffset.UTC).toInstant();
+        int historyCount = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+        int maxCount = Math.max(companion.getDailyInteractionsCount(), historyCount);
+        if (maxCount != companion.getDailyInteractionsCount()) {
+            companion.setDailyInteractionsCount(maxCount);
+            companionRepo.save(companion);
+        }
+        return maxCount;
+    }
+
     @Override
     public CompanionResponse interact(Long currentUserId) {
         Companion companion = companionRepo.findByUserId(currentUserId)
                 .orElseGet(() -> createDefaultCompanion(currentUserId));
 
-        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
-        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+        int todayInteractions = getAndSyncDailyInteractionsCount(companion);
 
         if (todayInteractions >= 5) {
             throw new NilevApiException(
@@ -165,6 +180,7 @@ public class CompanionServiceImpl implements CompanionService {
         companion.setHappiness(Math.min(100, companion.getHappiness() + 10));
         companion.setEnergy(Math.min(100, companion.getEnergy() + 5));
         companion.setLastInteractionDate(LocalDate.now());
+        companion.setDailyInteractionsCount(todayInteractions + 1);
 
         int oldLevel = companion.getLevel();
         int newXp = companion.getXp() + 5;
