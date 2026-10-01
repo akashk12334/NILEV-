@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Cosmic Palette Tokens */
+    --cosmic-bg: #070913;
+    --cosmic-surface: #0c1022;
+    --cosmic-surface-elevated: #11172e;
+    --cosmic-card: rgba(13, 17, 34, 0.72);
+    --cosmic-card-hover: rgba(20, 26, 52, 0.82);
+    --cosmic-border: rgba(147, 130, 255, 0.12);
+    --cosmic-border-glow: rgba(168, 85, 247, 0.38);
+
+    --accent-violet: #8b5cf6;
+    --accent-indigo: #6366f1;
+    --accent-fuchsia: #d946ef;
+    --accent-cyan: #06b6d4;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--cosmic-bg);
+    color: #f1f5f9;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Custom Sleek Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #070913;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.25);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.45);
+  }
+}
+
+/* Glassmorphism & Cosmic Glow Utilities */
+.glass-panel {
+  background: rgba(12, 16, 32, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 92, 246, 0.12);
+}
+
+.glass-panel-elevated {
+  background: rgba(17, 23, 46, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(139, 92, 246, 0.1);
+}
+
+.cosmic-glow-sm {
+  box-shadow: 0 0 15px -3px rgba(139, 92, 246, 0.2);
+}
+
+.cosmic-glow-md {
+  box-shadow: 0 0 25px -4px rgba(139, 92, 246, 0.28), 0 0 12px -2px rgba(99, 102, 241, 0.2);
+}
+
+.cosmic-glow-lg {
+  box-shadow: 0 0 40px -5px rgba(139, 92, 246, 0.35), 0 0 20px -2px rgba(217, 70, 239, 0.25);
+}
+
+.cosmic-border-glow {
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 0 20px -4px rgba(139, 92, 246, 0.25);
+}
+
+/* Subtle Shimmer Animation for Skeletons */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Cosmic Ambient Background Mesh */
+.cosmic-bg-mesh {
+  background-image:
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.14) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(139, 92, 246, 0.05) 0px, transparent 65%),
+    radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.08) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(6, 182, 212, 0.06) 0px, transparent 50%);
+}
+
+/* Companion Breathing & Floating Keyframes */
+@keyframes companion-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes companion-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes aura-pulse {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes sparkle-float {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-24px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.animate-companion-float {
+  animation: companion-float 4.5s ease-in-out infinite;
+}
+
+.animate-companion-breathe {
+  animation: companion-breathe 3.6s ease-in-out infinite;
+}
+
+.animate-aura-pulse {
+  animation: aura-pulse 3s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle-float 1.8s ease-out infinite;
+}
+
+/* Surprise Reveal Keyframes */
+@keyframes reveal-burst {
+  0% {
+    transform: scale(0.88);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  60% {
+    transform: scale(1.03);
+    filter: blur(0px);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+@keyframes seal-spin {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.08);
+  }
+}
+
+.animate-reveal-burst {
+  animation: reveal-burst 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-seal-spin {
+  animation: seal-spin 6s ease-in-out infinite;
+}
+
+

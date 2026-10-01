@@ -1,0 +1,23 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Maven Wrapper Shell Script for NILEV Backend
+# ----------------------------------------------------------------------------
+
+set -e
+
+MAVEN_VERSION="3.9.9"
+MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.zip"
+MAVEN_DIR="${HOME}/.m2/wrapper/dists/apache-maven-${MAVEN_VERSION}"
+MAVEN_BIN="${MAVEN_DIR}/apache-maven-${MAVEN_VERSION}/bin/mvn"
+
+if [ ! -f "${MAVEN_BIN}" ]; then
+  echo "[NILEV] Maven ${MAVEN_VERSION} wrapper not found. Downloading..."
+  mkdir -p "${MAVEN_DIR}"
+  curl -fsSL "${MAVEN_URL}" -o "${MAVEN_DIR}/maven.zip"
+  unzip -q -o "${MAVEN_DIR}/maven.zip" -d "${MAVEN_DIR}"
+  rm -f "${MAVEN_DIR}/maven.zip"
+  chmod +x "${MAVEN_BIN}"
+  echo "[NILEV] Maven ${MAVEN_VERSION} wrapper ready."
+fi
+
+exec "${MAVEN_BIN}" "$@"
