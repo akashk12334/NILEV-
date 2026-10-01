@@ -17,4 +17,7 @@ public interface CompanionHistoryRepository extends JpaRepository<CompanionHisto
 
     @Query("SELECT h FROM CompanionHistory h WHERE h.companion.user.id = :userId ORDER BY h.createdAt DESC")
     List<CompanionHistory> findRecentByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("SELECT COALESCE(SUM(h.xpGained), 0) FROM CompanionHistory h WHERE h.companion.id = :companionId")
+    int sumXpGainedByCompanionId(@Param("companionId") Long companionId);
 }

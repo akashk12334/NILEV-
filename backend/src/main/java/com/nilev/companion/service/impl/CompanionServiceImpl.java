@@ -51,6 +51,16 @@ public class CompanionServiceImpl implements CompanionService {
     public CompanionResponse getMyCompanion(Long currentUserId) {
         Companion companion = companionRepo.findByUserId(currentUserId)
                 .orElseGet(() -> createDefaultCompanion(currentUserId));
+
+        // Auto-heal / sync XP from history if any previous interactions didn't persist XP
+        int totalEarned = historyRepo.sumXpGainedByCompanionId(companion.getId());
+        if (totalEarned > companion.getXp()) {
+            companion.setXp(totalEarned);
+            int newLevel = CompanionLevelCalculator.calculateLevelFromXp(totalEarned);
+            companion.setLevel(newLevel);
+            companion = companionRepo.save(companion);
+        }
+
         return CompanionResponse.fromEntity(companion, currentUserId);
     }
 
@@ -132,19 +142,43 @@ public class CompanionServiceImpl implements CompanionService {
 
         companion.setHappiness(Math.min(100, companion.getHappiness() + 10));
         companion.setEnergy(Math.min(100, companion.getEnergy() + 5));
-        companion.setMood(CompanionMood.HAPPY);
         companion.setLastInteractionDate(LocalDate.now());
 
-        companionRepo.save(companion);
+        int oldLevel = companion.getLevel();
+        int newXp = companion.getXp() + 5;
+        int newLevel = CompanionLevelCalculator.calculateLevelFromXp(newXp);
+        companion.setXp(newXp);
 
-        historyRepo.save(new CompanionHistory(
-                companion,
-                "INTERACTION",
-                5,
-                "Affection & Care",
-                "Shared a loving moment with " + companion.getName(),
-                "💖"
-        ));
+        boolean leveledUp = newLevel > oldLevel;
+        if (leveledUp) {
+            companion.setLevel(newLevel);
+            companion.setMood(CompanionMood.PROUD);
+            companion.setHappiness(100);
+            companionRepo.save(companion);
+
+            publishLevelUpActivity(companion, oldLevel, newLevel, currentUserId);
+
+            historyRepo.save(new CompanionHistory(
+                    companion,
+                    "LEVEL_UP",
+                    5,
+                    companion.getName() + " reached Level " + newLevel + "! ✨",
+                    "Evolved to Level " + newLevel + " through steady sanctuary dedication.",
+                    "🌟"
+            ));
+        } else {
+            companion.setMood(CompanionMood.HAPPY);
+            companionRepo.save(companion);
+
+            historyRepo.save(new CompanionHistory(
+                    companion,
+                    "INTERACTION",
+                    5,
+                    "Affection & Care",
+                    "Shared a loving moment with " + companion.getName(),
+                    "💖"
+            ));
+        }
 
         return CompanionResponse.fromEntity(companion, currentUserId);
     }
