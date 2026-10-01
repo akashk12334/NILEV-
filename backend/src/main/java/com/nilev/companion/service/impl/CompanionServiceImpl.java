@@ -248,8 +248,8 @@ public class CompanionServiceImpl implements CompanionService {
 
         Companion c = Companion.builder()
                 .user(user)
-                .animalType(AnimalType.WOLF)
-                .name("Nova")
+                .animalType(AnimalType.FOX)
+                .name("Ember")
                 .level(1)
                 .xp(0)
                 .happiness(85)

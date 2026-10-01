@@ -156,13 +156,27 @@ export const AnimalArtwork: React.FC<AnimalArtworkProps> = ({
           boxShadow: `0 12px 35px -8px ${meta.primaryGlow}`,
         }}
       >
-        {/* Stylized SVG Emblem / Silhouette Artwork */}
+        {/* Stylized Artwork: High-Res 3D Image for FOX & RABBIT, or SVG */}
         <div
-          className={`flex items-center justify-center w-full h-full p-4 transition-transform duration-700 ${
+          className={`flex items-center justify-center w-full h-full p-2 transition-transform duration-700 ${
             animate ? "animate-companion-breathe" : ""
           }`}
         >
-          {renderAnimalSvg(animalType, meta)}
+          {animalType === "FOX" ? (
+            <img
+              src="/companions/fox.png"
+              alt="Solar Ember Fox"
+              className="w-full h-full object-contain filter drop-shadow-[0_12px_24px_rgba(249,115,22,0.5)] transform hover:scale-105 transition-transform"
+            />
+          ) : animalType === "RABBIT" ? (
+            <img
+              src="/companions/bunny.png"
+              alt="Moonlit Bunny"
+              className="w-full h-full object-contain filter drop-shadow-[0_12px_24px_rgba(244,114,182,0.5)] transform hover:scale-105 transition-transform"
+            />
+          ) : (
+            renderAnimalSvg(animalType, meta)
+          )}
         </div>
 
         {/* Ambient Orbiting Star Dots */}

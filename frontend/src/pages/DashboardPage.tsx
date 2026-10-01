@@ -22,7 +22,8 @@ import { usePartner } from "../hooks/usePartner";
 import { useHabits } from "../hooks/useHabits";
 import { companionService } from "../services/companion.service";
 import { goalService } from "../services/goal.service";
-import type { CompanionResponse, GoalResponse } from "../types";
+import type { CompanionResponse, GoalResponse, AnimalType } from "../types";
+import { ChooseCompanionModal } from "../components/companion/ChooseCompanionModal";
 import {
   Button,
   Card,
@@ -102,6 +103,37 @@ export const DashboardPage: React.FC = () => {
   const [goals, setGoals] = React.useState<GoalResponse[]>([]);
   const [myCompanion, setMyCompanion] = React.useState<CompanionResponse | null>(null);
   const [partnerCompanion, setPartnerCompanion] = React.useState<CompanionResponse | null>(null);
+  const [isChooseModalOpen, setIsChooseModalOpen] = React.useState(false);
+  const [hasChosenCompanion, setHasChosenCompanion] = React.useState<boolean>(() => {
+    if (!user?.id) return true;
+    return localStorage.getItem(`nilev_has_chosen_companion_${user.id}`) === "true";
+  });
+
+  // Prompt new users to choose their companion character
+  React.useEffect(() => {
+    if (user?.id) {
+      const isChosen = localStorage.getItem(`nilev_has_chosen_companion_${user.id}`) === "true";
+      setHasChosenCompanion(isChosen);
+      if (!isChosen) {
+        const timer = setTimeout(() => setIsChooseModalOpen(true), 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user?.id]);
+
+  const handleSaveCompanion = async (animalType: AnimalType, name: string) => {
+    const updated = await companionService.chooseCompanion({ animalType, name });
+    setMyCompanion(updated);
+    if (user?.id) {
+      localStorage.setItem(`nilev_has_chosen_companion_${user.id}`, "true");
+      setHasChosenCompanion(true);
+    }
+    toast({
+      type: "success",
+      title: "Companion Bonded! 🌟",
+      description: `You are now bonded with ${updated.name} the ${animalType === "RABBIT" ? "Bunny" : animalType}!`,
+    });
+  };
 
   const isConnected = partnerStatus?.status === "CONNECTED";
   const partner = partnerStatus?.partner;
@@ -288,6 +320,34 @@ export const DashboardPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* ── NEW USER COMPANION SELECTION BANNER ───────────────────── */}
+      {!hasChosenCompanion && (
+        <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/15 via-purple-500/10 to-slate-900 p-5 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-amber-500/5">
+          <div className="flex items-center gap-4">
+            <div className="flex -space-x-3 shrink-0">
+              <img src="/companions/fox.png" alt="Fox" className="w-12 h-12 object-contain filter drop-shadow-[0_4px_10px_rgba(249,115,22,0.4)]" />
+              <img src="/companions/bunny.png" alt="Bunny" className="w-12 h-12 object-contain filter drop-shadow-[0_4px_10px_rgba(244,114,182,0.4)]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-400" /> Choose Your Astral Spirit Companion
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Select your 3D Fox, Bunny, or other spirit guide to embark on your daily habit journey!
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="glow"
+            size="sm"
+            onClick={() => setIsChooseModalOpen(true)}
+            className="shrink-0 bg-gradient-to-r from-amber-500 to-indigo-600 text-white font-bold"
+          >
+            Select Character
+          </Button>
+        </div>
+      )}
 
       {/* ── YOUR STATS (4 StatCards) ──────────────────────────── */}
       <div>
@@ -478,19 +538,43 @@ export const DashboardPage: React.FC = () => {
               startColor="#a855f7"
               endColor="#6366f1"
             >
-              <div className="flex flex-col items-center">
-                <span className="text-4xl leading-none mb-1" role="img" aria-label="companion">
-                  {myCompanion?.animalEmoji || "🦊"}
-                </span>
+              <div
+                className="flex flex-col items-center justify-center cursor-pointer group"
+                onClick={() => setIsChooseModalOpen(true)}
+                title="Click to customize character"
+              >
+                {myCompanion?.animalType === "FOX" ? (
+                  <img
+                    src="/companions/fox.png"
+                    alt="Solar Ember Fox"
+                    className="w-14 h-14 object-contain filter drop-shadow-[0_4px_12px_rgba(249,115,22,0.5)] transform group-hover:scale-110 transition-transform mb-0.5"
+                  />
+                ) : myCompanion?.animalType === "RABBIT" ? (
+                  <img
+                    src="/companions/bunny.png"
+                    alt="Moonlit Bunny"
+                    className="w-14 h-14 object-contain filter drop-shadow-[0_4px_12px_rgba(244,114,182,0.5)] transform group-hover:scale-110 transition-transform mb-0.5"
+                  />
+                ) : (
+                  <span className="text-4xl leading-none mb-1 group-hover:scale-110 transition-transform" role="img" aria-label="companion">
+                    {myCompanion?.animalEmoji || "🦊"}
+                  </span>
+                )}
                 <span className="text-[9px] font-mono text-slate-400">{myCompanion?.xp || 0} XP</span>
               </div>
             </ProgressRing>
 
             <h3 className="mt-3 text-base font-bold text-white tracking-tight">
-              {myCompanion?.name || "Celestial Sprout"}
+              {myCompanion?.name || "Ember"}
             </h3>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              {myCompanion?.animalType ? `${myCompanion.animalType} Companion` : "Spirit Guide"}
+              {myCompanion?.animalType === "RABBIT"
+                ? "Moonlit Bunny Spirit"
+                : myCompanion?.animalType === "FOX"
+                ? "Solar Ember Fox Spirit"
+                : myCompanion?.animalType
+                ? `${myCompanion.animalType} Companion`
+                : "Spirit Guide"}
             </p>
 
             <div className="w-full mt-4 grid grid-cols-2 gap-2 text-left">
@@ -506,10 +590,15 @@ export const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-400">
-              <Smile className="h-3.5 w-3.5 text-violet-400" />
-              <span>Grows as you check off daily habits</span>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsChooseModalOpen(true)}
+              className="mt-3.5 w-full border-violet-500/30 text-violet-300 hover:bg-violet-600/10 text-xs font-semibold py-1.5"
+              leftIcon={<Sparkles className="h-3.5 w-3.5 text-amber-400" />}
+            >
+              Choose / Customize Character
+            </Button>
           </Card>
 
           {/* PARTNER COMPANION */}
@@ -531,10 +620,24 @@ export const DashboardPage: React.FC = () => {
                 startColor="#ec4899"
                 endColor="#f97316"
               >
-                <div className="flex flex-col items-center">
-                  <span className="text-4xl leading-none mb-1" role="img" aria-label="partner companion">
-                    {partnerCompanion?.animalEmoji || "🐰"}
-                  </span>
+                <div className="flex flex-col items-center justify-center">
+                  {partnerCompanion?.animalType === "FOX" ? (
+                    <img
+                      src="/companions/fox.png"
+                      alt="Solar Ember Fox"
+                      className="w-14 h-14 object-contain filter drop-shadow-[0_4px_12px_rgba(249,115,22,0.5)] mb-0.5"
+                    />
+                  ) : partnerCompanion?.animalType === "RABBIT" ? (
+                    <img
+                      src="/companions/bunny.png"
+                      alt="Moonlit Bunny"
+                      className="w-14 h-14 object-contain filter drop-shadow-[0_4px_12px_rgba(244,114,182,0.5)] mb-0.5"
+                    />
+                  ) : (
+                    <span className="text-4xl leading-none mb-1" role="img" aria-label="partner companion">
+                      {partnerCompanion?.animalEmoji || "🐰"}
+                    </span>
+                  )}
                   <span className="text-[9px] font-mono text-slate-400">{partnerCompanion?.xp || 0} XP</span>
                 </div>
               </ProgressRing>
@@ -543,7 +646,13 @@ export const DashboardPage: React.FC = () => {
                 {partnerCompanion?.name || `${partnerName}'s Guide`}
               </h3>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                {partnerCompanion?.animalType ? `${partnerCompanion.animalType} Companion` : "Caretaker Spirit"}
+                {partnerCompanion?.animalType === "RABBIT"
+                  ? "Moonlit Bunny Spirit"
+                  : partnerCompanion?.animalType === "FOX"
+                  ? "Solar Ember Fox Spirit"
+                  : partnerCompanion?.animalType
+                  ? `${partnerCompanion.animalType} Companion`
+                  : "Caretaker Spirit"}
               </p>
 
               <div className="w-full mt-4 grid grid-cols-2 gap-2 text-left">
@@ -794,6 +903,15 @@ export const DashboardPage: React.FC = () => {
           )}
         </Card>
       </div>
+
+      {/* ── CHOOSE COMPANION MODAL ─────────────────────────────── */}
+      <ChooseCompanionModal
+        isOpen={isChooseModalOpen}
+        onClose={() => setIsChooseModalOpen(false)}
+        currentAnimal={myCompanion?.animalType || "FOX"}
+        currentName={myCompanion?.name || "Ember"}
+        onSave={handleSaveCompanion}
+      />
 
     </div>
   );
