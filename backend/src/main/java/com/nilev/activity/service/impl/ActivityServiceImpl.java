@@ -114,6 +114,7 @@ public class ActivityServiceImpl implements ActivityService {
     // ── Internal publish ──────────────────────────────────────────────
 
     @Override
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void publish(Long actorId, ActivityType type, Long referenceId,
                         String title, String description, String icon, String metadata) {
         try {

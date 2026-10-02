@@ -165,11 +165,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleGlobalException(Exception ex, HttpServletRequest request) {
         log.error("Unhandled exception at {}: ", request.getRequestURI(), ex);
 
+        Throwable root = ex;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        String errorMsg = root.getMessage() != null && !root.getMessage().isBlank()
+                ? root.getMessage()
+                : (ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred. Please try again later.");
+
         ApiErrorResponse response = ApiErrorResponse.builder()
                 .success(false)
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .errorCode("INTERNAL_SERVER_ERROR")
-                .message("An unexpected error occurred. Please try again later.")
+                .message(errorMsg)
                 .path(request.getRequestURI())
                 .timestamp(Instant.now())
                 .build();

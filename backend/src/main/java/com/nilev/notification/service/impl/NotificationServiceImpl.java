@@ -120,6 +120,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public Notification sendNotification(User recipient, User actor, NotificationType type, String title, String message, String icon, Long referenceId, String referenceType, String actionUrl) {
         if (recipient == null) {
             log.warn("Cannot send notification: recipient is null");

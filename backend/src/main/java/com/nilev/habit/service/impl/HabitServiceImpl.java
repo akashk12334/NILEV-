@@ -476,7 +476,12 @@ public class HabitServiceImpl implements HabitService {
         }
 
         // streak & longest
-        List<LocalDate> dates = completionRepo.findCompletedDatesByHabitId(habitId);
+        List<LocalDate> dates = completionRepo.findByHabitIdOrderByCompletedDateDesc(habitId)
+                .stream()
+                .map(HabitCompletion::getCompletedDate)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
         int currentStreak = computeCurrentStreak(dates, today);
         r.setCurrentStreak(currentStreak);
         r.setLongestStreak(Math.max(habit.getLongestStreak(), currentStreak));

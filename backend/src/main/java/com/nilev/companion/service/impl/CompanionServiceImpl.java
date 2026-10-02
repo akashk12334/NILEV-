@@ -213,6 +213,7 @@ public class CompanionServiceImpl implements CompanionService {
     }
 
     @Override
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public Companion addXp(Long userId, int xpAmount, String eventType, String title, String description, String icon) {
         try {
             Companion companion = companionRepo.findByUserId(userId)
