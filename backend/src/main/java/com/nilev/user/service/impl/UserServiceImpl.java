@@ -10,6 +10,7 @@ import com.nilev.user.dto.UserDto;
 import com.nilev.user.entity.User;
 import com.nilev.user.repository.UserRepository;
 import com.nilev.user.service.UserService;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
@@ -32,16 +33,28 @@ public class UserServiceImpl implements UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
     private final UserRepository userRepository;
-    private final Path avatarUploadDir = Paths.get("uploads", "avatars");
+    private final Path avatarUploadDir = Paths.get("uploads", "avatars").toAbsolutePath().normalize();
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+
+    @PostConstruct
+    public void initAvatarDirectory() {
+        try {
+            if (!Files.exists(avatarUploadDir)) {
+                Files.createDirectories(avatarUploadDir);
+                log.info("Initialized avatar upload directory at: {}", avatarUploadDir);
+            }
+        } catch (IOException e) {
+            log.warn("Could not pre-create avatar upload dir: {}", avatarUploadDir, e);
+        }
     }
 
     @Override

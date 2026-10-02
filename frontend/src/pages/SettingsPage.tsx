@@ -320,11 +320,11 @@ export const SettingsPage: React.FC = () => {
               <Avatar
                 src={currentAvatarSrc}
                 fallback={nickname || name || "You"}
-                size="xl"
+                size="2xl"
                 status="online"
                 glow
                 partnerRing={isConnected}
-                className="h-24 w-24 sm:h-28 sm:w-28 text-2xl font-bold border-2 border-violet-400/30"
+                className="border-2 border-violet-400/40 shadow-xl"
               />
               <button
                 type="button"

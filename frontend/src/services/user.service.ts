@@ -24,12 +24,7 @@ export const userService = {
 
     const res = await apiClient.post<ApiResponse<User>>(
       ENDPOINTS.USERS.PROFILE_PICTURE,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      formData
     );
     return res.data.data;
   },

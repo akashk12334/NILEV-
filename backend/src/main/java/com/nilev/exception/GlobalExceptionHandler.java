@@ -12,7 +12,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -124,6 +125,39 @@ public class GlobalExceptionHandler {
                 .build();
 
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        log.warn("Upload size exceeded at {}: {}", request.getRequestURI(), ex.getMessage());
+
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .success(false)
+                .status(HttpStatus.BAD_REQUEST.value())
+                .errorCode("FILE_TOO_LARGE")
+                .message("File size exceeds the 10 MB upload limit. Please select a smaller photo.")
+                .path(request.getRequestURI())
+                .timestamp(Instant.now())
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<ApiErrorResponse> handleMultipartException(MultipartException ex, HttpServletRequest request) {
+        log.error("Multipart upload exception at {}: ", request.getRequestURI(), ex);
+
+        String detail = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .success(false)
+                .status(HttpStatus.BAD_REQUEST.value())
+                .errorCode("INVALID_MULTIPART_REQUEST")
+                .message("Invalid upload request: " + (detail != null ? detail : "Malformed file upload"))
+                .path(request.getRequestURI())
+                .timestamp(Instant.now())
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)

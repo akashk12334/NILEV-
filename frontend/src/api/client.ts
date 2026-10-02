@@ -11,12 +11,16 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
-// Request interceptor: Attach JWT token if available
+// Request interceptor: Attach JWT token if available & allow browser to set FormData boundary
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = storageService.getToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // If payload is FormData, remove manual Content-Type so browser generates multipart boundary
+    if (config.data instanceof FormData && config.headers) {
+      delete config.headers["Content-Type"];
     }
     return config;
   },
