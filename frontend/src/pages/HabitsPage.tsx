@@ -175,7 +175,7 @@ function CheckButton({
       disabled={loading || disabled}
       title={title || (done ? "Mark incomplete" : "Mark complete")}
       aria-label={done ? "Mark incomplete" : "Mark complete"}
-      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950 ${
+      className={`relative flex min-h-[44px] min-w-[44px] h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950 ${
         done
           ? "border-transparent text-white shadow-lg"
           : "border-slate-600 bg-transparent hover:border-slate-400 text-transparent"
@@ -189,11 +189,11 @@ function CheckButton({
       style={done ? { backgroundColor: color, boxShadow: `0 0 16px ${color}60` } : {}}
     >
       {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+        <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
       ) : done ? (
-        <Check className="h-4.5 w-4.5 stroke-[3]" />
+        <Check className="h-5 w-5 stroke-[3]" />
       ) : (
-        <Check className="h-4.5 w-4.5 stroke-[3] text-slate-600 group-hover:text-slate-400 transition-colors" />
+        <Check className="h-5 w-5 stroke-[3] text-slate-600 group-hover:text-slate-400 transition-colors" />
       )}
       {done && !disabled && (
         <span
@@ -390,22 +390,22 @@ function HabitCard({
 
         {/* Only show Edit/Delete buttons for MY HABITS */}
         {!isPartner && onEdit && onDelete && (
-          <div className="ml-auto flex items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+          <div className="ml-auto flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <button
               onClick={onEdit}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-violet-400 hover:bg-violet-950/30 transition-all"
+              className="min-h-[40px] min-w-[40px] p-2 flex items-center justify-center rounded-xl text-slate-400 hover:text-violet-400 hover:bg-violet-950/40 active:bg-violet-900/50 transition-all"
               aria-label="Edit habit"
               title="Edit habit"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="h-4 w-4" />
             </button>
             <button
               onClick={onDelete}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-all"
+              className="min-h-[40px] min-w-[40px] p-2 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 active:bg-rose-900/50 transition-all"
               aria-label="Delete habit"
               title="Delete habit"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         )}

@@ -298,7 +298,7 @@ export const AnalyticsPage: React.FC = () => {
             {/* ── ROW 1: Weekly Completion & Monthly Completion ───────── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Chart 1: Weekly Completion */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+              <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
@@ -376,7 +376,7 @@ export const AnalyticsPage: React.FC = () => {
               </div>
 
               {/* Chart 2: Monthly Completion */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+              <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
@@ -448,7 +448,7 @@ export const AnalyticsPage: React.FC = () => {
             {/* ── ROW 2: XP Growth & Habit Distribution ───────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Chart 3: XP Growth (2 cols) */}
-              <div className="lg:col-span-2 p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+              <div className="lg:col-span-2 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
@@ -517,7 +517,7 @@ export const AnalyticsPage: React.FC = () => {
               </div>
 
               {/* Chart 4: Habit Distribution (1 col) */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+              <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
@@ -577,7 +577,7 @@ export const AnalyticsPage: React.FC = () => {
             {/* ── ROW 3: Goal Progress & Streak History ───────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Chart 5: Goal Progress */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+              <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
@@ -654,7 +654,7 @@ export const AnalyticsPage: React.FC = () => {
               </div>
 
               {/* Chart 6: Streak History */}
-              <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+              <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
@@ -713,7 +713,7 @@ export const AnalyticsPage: React.FC = () => {
             </div>
 
             {/* ── ROW 4: Habit Consistency Breakdown Table ───────────── */}
-            <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl">
+            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl shadow-xl">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
                 <div>
                   <h3 className="text-base font-bold text-white tracking-tight">
@@ -728,8 +728,8 @@ export const AnalyticsPage: React.FC = () => {
                 </Badge>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="overflow-x-auto scrollbar-none">
+                <table className="w-full text-left text-xs min-w-[560px]">
                   <thead>
                     <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
                       <th className="pb-3 pl-2">Habit</th>

@@ -549,7 +549,7 @@ export const SettingsPage: React.FC = () => {
                 setDeleteConfirmation("");
                 setIsDeleteModalOpen(true);
               }}
-              className="shrink-0 self-start sm:self-center font-semibold"
+              className="w-full sm:w-auto shrink-0 font-semibold"
             >
               Delete Account
             </Button>

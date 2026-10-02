@@ -9,6 +9,7 @@ import {
   Settings,
   Sparkles,
   Command,
+  Heart,
 } from "lucide-react";
 import { ROUTES } from "../../constants";
 import { useAuth } from "../../hooks/useAuth";
@@ -49,21 +50,30 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 sm:h-16 w-full items-center justify-between border-b border-[rgba(147,130,255,0.12)] bg-[rgba(7,9,19,0.85)] px-3 sm:px-6 backdrop-blur-2xl transition-all">
-      {/* Left: Mobile Toggle & Page Title / Breadcrumbs */}
-      <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1 sm:flex-initial mr-2 sm:mr-0">
+    <header className="sticky top-0 z-20 flex h-14 sm:h-16 w-full items-center justify-between border-b border-[rgba(147,130,255,0.12)] bg-[rgba(7,9,19,0.92)] px-2.5 sm:px-6 backdrop-blur-2xl transition-all">
+      {/* Left: Mobile Menu Toggle + NILEV Logo + Page Title */}
+      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 mr-2 sm:mr-0">
         {onMobileMenuToggle && (
           <button
             onClick={onMobileMenuToggle}
-            className="flex md:hidden h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl border border-[rgba(147,130,255,0.15)] bg-slate-900/60 text-slate-300 hover:text-white hover:bg-violet-600/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 transition-all"
-            aria-label="Open mobile menu"
+            className="flex md:hidden h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[rgba(147,130,255,0.15)] bg-slate-900/60 text-slate-300 hover:text-white hover:bg-violet-600/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-500/50 transition-all"
+            aria-label="Open mobile navigation menu"
           >
             <Menu className="h-4 w-4" />
           </button>
         )}
 
+        {/* NILEV Logo on Mobile */}
+        <Link
+          to={ROUTES.DASHBOARD}
+          className="flex md:hidden h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-pink-500 shadow-sm shadow-violet-950/60 ring-1 ring-white/20 active:scale-95 transition-transform"
+          aria-label="NILEV Home"
+        >
+          <Heart className="h-4 w-4 fill-white text-white" />
+        </Link>
+
         {/* Dynamic Breadcrumbs & Title */}
-        <div className="flex flex-col min-w-0">
+        <div className="flex flex-col min-w-0 flex-1">
           <div className="flex items-center space-x-1.5 text-[10px] sm:text-[11px] font-medium text-slate-400 truncate">
             <Link to={ROUTES.DASHBOARD} className="hover:text-slate-200 transition-colors">
               NILEV

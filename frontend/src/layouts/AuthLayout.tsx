@@ -5,7 +5,7 @@ import { ROUTES } from "../constants";
 
 export const AuthLayout: React.FC = () => {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-[#070913] text-slate-100 px-4 py-12 overflow-hidden selection:bg-violet-500/30 selection:text-white">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-[#070913] text-slate-100 px-4 py-8 sm:py-12 overflow-hidden selection:bg-violet-500/30 selection:text-white">
       {/* Cosmic background radial gradients and glow effects */}
       <div className="pointer-events-none absolute inset-0 cosmic-bg-mesh opacity-80" />
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-violet-600/15 via-indigo-500/10 to-transparent blur-3xl rounded-full" />
@@ -39,7 +39,7 @@ export const AuthLayout: React.FC = () => {
         </Link>
 
         {/* Centered Authentication Card with soft glow and glassmorphism */}
-        <div className="w-full rounded-2xl border border-violet-500/20 bg-[#0c1022]/90 p-7 sm:p-9 backdrop-blur-2xl shadow-[0_0_50px_-10px_rgba(139,92,246,0.18)] transition-all">
+        <div className="w-full rounded-2xl border border-violet-500/20 bg-[#0c1022]/90 p-5 sm:p-9 backdrop-blur-2xl shadow-[0_0_50px_-10px_rgba(139,92,246,0.18)] transition-all">
           <Outlet />
         </div>
 

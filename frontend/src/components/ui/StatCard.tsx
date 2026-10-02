@@ -43,19 +43,19 @@ export const StatCard: React.FC<StatCardProps> = ({
     <Card
       glow={glow}
       className={cn(
-        "p-5 sm:p-6 flex flex-col justify-between h-full overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-950/20 group",
+        "p-4 sm:p-6 flex flex-col justify-between h-full overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-950/20 group min-w-0",
         className
       )}
       {...props}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 group-hover:text-slate-300 transition-colors">
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 group-hover:text-slate-300 transition-colors truncate pr-2">
           {title}
         </span>
         {icon && (
           <div
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-xl border",
+              "flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl border",
               accentIconBg[accentColor]
             )}
           >
@@ -64,8 +64,8 @@ export const StatCard: React.FC<StatCardProps> = ({
         )}
       </div>
 
-      <div className="mt-4 flex items-baseline justify-between gap-2">
-        <div className="text-3xl font-extrabold tracking-tight text-white font-mono">
+      <div className="mt-3 sm:mt-4 flex items-baseline justify-between gap-2">
+        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-mono truncate">
           {value}
         </div>
         {trend && (

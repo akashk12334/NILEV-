@@ -180,7 +180,7 @@ export const SurprisesPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 sm:gap-3">
           <Button
             variant="outline"
             size="sm"
@@ -219,7 +219,7 @@ export const SurprisesPage: React.FC = () => {
 
       {/* Partner Warning if not connected */}
       {!hasPartner && (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 flex items-center justify-between text-xs text-amber-200">
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-200">
           <div className="flex items-center space-x-2.5">
             <Users className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
@@ -320,7 +320,7 @@ export const SurprisesPage: React.FC = () => {
           <div className="space-y-6">
             {/* Unopened Delivered Surprises Header Notice */}
             {unopenedCount > 0 && (
-              <div className="rounded-2xl border border-pink-500/30 bg-gradient-to-r from-pink-950/40 to-purple-950/40 p-4 flex items-center justify-between text-xs text-pink-200">
+              <div className="rounded-2xl border border-pink-500/30 bg-gradient-to-r from-pink-950/40 to-purple-950/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-pink-200">
                 <div className="flex items-center space-x-2">
                   <Sparkles className="w-4 h-4 text-pink-400 animate-sparkle" />
                   <span>

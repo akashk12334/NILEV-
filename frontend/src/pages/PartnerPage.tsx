@@ -480,7 +480,7 @@ export const PartnerPage: React.FC = () => {
               </div>
 
               {/* Status and Disconnect */}
-              <div className="flex items-center gap-3 self-end md:self-center">
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 self-start md:self-center">
                 <Badge variant="violet" size="sm" withDot pulseDot>
                   2-Person Sanctuary Linked
                 </Badge>
@@ -502,8 +502,8 @@ export const PartnerPage: React.FC = () => {
             {/* YOUR PROFILE (Active / Full Control) */}
             <Card className="glass-panel-elevated border-violet-500/20">
               <CardHeader className="border-b border-slate-800/80 pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center space-x-3 min-w-0">
                     <Avatar
                       src={user.avatarUrl || user.profileImageUrl || undefined}
                       fallback={user.nickname || user.name || "You"}
@@ -511,21 +511,21 @@ export const PartnerPage: React.FC = () => {
                       status="online"
                       partnerRing
                     />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-base text-white">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <CardTitle className="text-base text-white truncate max-w-[150px] sm:max-w-none">
                           {user.nickname ? `${user.nickname} (${user.name})` : user.name}
                         </CardTitle>
                         <Badge variant="violet" size="sm">
                           You (Owner)
                         </Badge>
                       </div>
-                      <CardDescription className="text-xs text-slate-400">
+                      <CardDescription className="text-xs text-slate-400 truncate">
                         {user.email}
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge variant="default" size="sm">
+                  <Badge variant="default" size="sm" className="self-start sm:self-auto">
                     Full Control
                   </Badge>
                 </div>
@@ -622,31 +622,31 @@ export const PartnerPage: React.FC = () => {
             {/* PARTNER PROFILE (Connected / Read-Only View) */}
             <Card className="glass-panel-elevated border-pink-500/25 shadow-[0_0_30px_rgba(236,72,153,0.08)]">
               <CardHeader className="border-b border-slate-800/80 pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center space-x-3 min-w-0">
                     <Avatar
                       fallback={partner.name || "Partner"}
                       size="md"
                       status="online"
                       partnerRing
                     />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-base text-white">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <CardTitle className="text-base text-white truncate max-w-[150px] sm:max-w-none">
                           {partner.name}
                         </CardTitle>
                         <Badge variant="rose" size="sm">
                           Partner
                         </Badge>
                       </div>
-                      <CardDescription className="text-xs text-slate-400">
+                      <CardDescription className="text-xs text-slate-400 truncate">
                         {partner.email}
                       </CardDescription>
                     </div>
                   </div>
 
                   {/* Read-Only Badge */}
-                  <Badge variant="indigo" size="sm" className="flex items-center gap-1">
+                  <Badge variant="indigo" size="sm" className="flex items-center gap-1 self-start sm:self-auto">
                     <Lock className="h-3 w-3" />
                     Read-Only
                   </Badge>

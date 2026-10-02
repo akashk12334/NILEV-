@@ -112,10 +112,10 @@ export const ANIMAL_DETAILS: Record<AnimalType, AnimalMeta> = {
 };
 
 const SIZE_MAP = {
-  sm: "w-12 h-12",
-  md: "w-20 h-20",
-  lg: "w-36 h-36",
-  hero: "w-52 h-52 md:w-60 md:h-60",
+  sm: "w-12 h-12 max-w-full",
+  md: "w-20 h-20 max-w-full",
+  lg: "w-32 h-32 sm:w-36 sm:h-36 max-w-full",
+  hero: "w-44 h-44 sm:w-52 sm:h-52 md:w-60 md:h-60 max-w-full",
 };
 
 export const AnimalArtwork: React.FC<AnimalArtworkProps> = ({

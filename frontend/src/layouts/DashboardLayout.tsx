@@ -37,7 +37,7 @@ export const DashboardLayout: React.FC = () => {
       <div className="flex flex-1 flex-col min-w-0">
         <Header onMobileMenuToggle={() => setIsMobileDrawerOpen(true)} />
 
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-12 max-w-7xl w-full mx-auto">
+        <main className="flex-1 px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-24 md:pb-12 max-w-7xl w-full mx-auto min-w-0">
           <Outlet />
         </main>
 

@@ -428,13 +428,13 @@ export const BulkCreateHabitsModal: React.FC<BulkCreateHabitsModalProps> = ({
         </Button>
 
         {/* Footer controls */}
-        <div className="flex gap-2 pt-3 border-t border-slate-800">
+        <div className="flex flex-col-reverse sm:flex-row gap-2 pt-3 border-t border-slate-800">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="flex-1"
+            className="w-full sm:flex-1 py-2.5"
             disabled={submitting}
           >
             Cancel
@@ -443,7 +443,7 @@ export const BulkCreateHabitsModal: React.FC<BulkCreateHabitsModalProps> = ({
             type="submit"
             variant="glow"
             size="sm"
-            className="flex-1"
+            className="w-full sm:flex-1 py-2.5"
             disabled={submitting}
             leftIcon={submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
           >

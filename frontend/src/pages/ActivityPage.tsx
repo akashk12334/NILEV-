@@ -576,7 +576,7 @@ export const ActivityPage: React.FC = () => {
               </div>
 
               {/* Feed Cards */}
-              <div className="space-y-3 relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-violet-500/30 before:via-violet-500/15 before:to-transparent">
+              <div className="space-y-3 relative pl-3.5 sm:pl-6 before:absolute before:left-0 sm:before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-violet-500/30 before:via-violet-500/15 before:to-transparent">
                 {group.items.map((act) => {
                   const conf = TYPE_CONFIG[act.type] || {
                     label: act.type,
@@ -589,12 +589,12 @@ export const ActivityPage: React.FC = () => {
                   return (
                     <div
                       key={act.id}
-                      className="group relative rounded-2xl bg-[#0e1322]/80 border border-violet-500/15 hover:border-violet-500/35 transition-all duration-300 p-4 shadow-sm hover:shadow-[0_4px_24px_rgba(139,92,246,0.1)]"
+                      className="group relative rounded-2xl bg-[#0e1322]/80 border border-violet-500/15 hover:border-violet-500/35 transition-all duration-300 p-3.5 sm:p-4 shadow-sm hover:shadow-[0_4px_24px_rgba(139,92,246,0.1)]"
                     >
                       {/* Timeline dot */}
                       <div
                         className={cn(
-                          "absolute -left-6 top-5 -translate-x-1/2 h-3 w-3 rounded-full border-2 border-[#090D16] transition-transform duration-300 group-hover:scale-125",
+                          "absolute -left-3.5 sm:-left-6 top-5 -translate-x-1/2 h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full border-2 border-[#090D16] transition-transform duration-300 group-hover:scale-125",
                           act.isMine ? "bg-emerald-400 ring-2 ring-emerald-500/30" : "bg-violet-400 ring-2 ring-violet-500/30"
                         )}
                       />
@@ -756,8 +756,8 @@ export const ActivityPage: React.FC = () => {
                       </div>
 
                       {/* ── Reaction Bar ─────────────────────────────── */}
-                      <div className="mt-3.5 pt-3 border-t border-violet-500/10 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="mt-3.5 pt-3 border-t border-violet-500/10 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <span className="text-[11px] uppercase tracking-wider text-slate-500 font-medium mr-1 hidden sm:inline">
                             React:
                           </span>
@@ -772,7 +772,7 @@ export const ActivityPage: React.FC = () => {
                                 key={emoji}
                                 onClick={() => handleReaction(act.id, emoji)}
                                 className={cn(
-                                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-all duration-200 border select-none active:scale-90",
+                                  "inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs transition-all duration-200 border select-none active:scale-90",
                                   isMineReaction
                                     ? "bg-violet-500/25 text-white border-violet-400/50 shadow-[0_0_12px_rgba(139,92,246,0.3)] font-semibold"
                                     : "bg-[#090D16]/60 text-slate-400 border-violet-500/10 hover:border-violet-500/30 hover:text-slate-200",
@@ -788,7 +788,7 @@ export const ActivityPage: React.FC = () => {
                         </div>
 
                         {/* Subtle Right indicator */}
-                        <div className="text-[11px] text-slate-500 flex items-center gap-1">
+                        <div className="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1 ml-auto">
                           {act.isMine ? (
                             <span className="text-emerald-400/80">Your action</span>
                           ) : (

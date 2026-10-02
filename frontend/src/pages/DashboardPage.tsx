@@ -215,7 +215,7 @@ export const DashboardPage: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-300 pb-8">
 
       {/* ── GREETING HERO ──────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-[#1a1438]/90 via-[#0f1429]/85 to-[#0d1122]/80 p-7 shadow-xl shadow-black/50 backdrop-blur-2xl">
+      <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-[#1a1438]/90 via-[#0f1429]/85 to-[#0d1122]/80 p-5 sm:p-7 shadow-xl shadow-black/50 backdrop-blur-2xl">
         <div className="pointer-events-none absolute -top-16 -right-16 h-72 w-72 rounded-full bg-violet-600/12 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-12 -left-12 h-56 w-56 rounded-full bg-pink-600/8 blur-3xl" />
 
@@ -223,7 +223,7 @@ export const DashboardPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2.5 mb-1">
               <span className="text-2xl">👋</span>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white">
                 {getGreeting()}, {firstName}
               </h1>
             </div>
@@ -259,7 +259,7 @@ export const DashboardPage: React.FC = () => {
               <>
                 <div className="flex -space-x-3">
                   <Tooltip content={`${firstName} (You)`}>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white font-bold text-base border-2 border-[#0f1429] shadow-lg shadow-violet-900/40 cursor-default">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white font-bold text-base border-2 border-[#0f1429] shadow-lg shadow-violet-950/40 cursor-default">
                       {firstName[0]}
                     </div>
                   </Tooltip>
@@ -291,8 +291,8 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Today Overview Strip */}
-        <div className="relative mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* Today Overview Strip - Vertically stacked on mobile */}
+        <div className="relative mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             {
               label: "Today's Progress",

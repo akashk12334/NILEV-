@@ -586,11 +586,11 @@ export const GoalsPage: React.FC = () => {
                 <div className="mt-4 pt-3.5 border-t border-violet-500/10">
                   {goal.isImportant ? (
                     /* Circular progress layout for important goals */
-                    <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-[#090D16]/60 border border-violet-500/15">
-                      <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-xl bg-[#090D16]/60 border border-violet-500/15">
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                         <ProgressRing
                           value={goal.percentage}
-                          size={76}
+                          size={68}
                           strokeWidth={6}
                           startColor={goal.color || "#8B5CF6"}
                           endColor="#EC4899"
@@ -600,9 +600,9 @@ export const GoalsPage: React.FC = () => {
                           </span>
                         </ProgressRing>
 
-                        <div>
+                        <div className="min-w-0">
                           <div className="text-xs font-medium text-slate-400">Current Progress</div>
-                          <div className="text-lg font-bold text-white font-mono mt-0.5">
+                          <div className="text-base sm:text-lg font-bold text-white font-mono mt-0.5 truncate">
                             {goal.currentValue}
                             <span className="text-xs text-slate-400 font-normal ml-1">
                               / {goal.targetValue} {goal.unit}
@@ -613,7 +613,7 @@ export const GoalsPage: React.FC = () => {
                               <CheckCircle2 className="h-3 w-3" /> Accomplished!
                             </span>
                           ) : (
-                            <span className="text-[11px] text-violet-300 mt-0.5">
+                            <span className="text-[11px] text-violet-300 mt-0.5 block truncate">
                               {Math.max(0, goal.targetValue - goal.currentValue)} {goal.unit} remaining
                             </span>
                           )}
@@ -621,14 +621,14 @@ export const GoalsPage: React.FC = () => {
                       </div>
 
                       {/* Milestone Badges */}
-                      <div className="flex flex-col gap-1 text-[11px] font-mono">
+                      <div className="flex flex-row sm:flex-col gap-1 text-[10px] sm:text-[11px] font-mono flex-wrap sm:flex-nowrap">
                         {MILESTONES.map((m) => {
                           const reached = goal.percentage >= m;
                           return (
                             <span
                               key={m}
                               className={cn(
-                                "px-1.5 py-0.5 rounded text-[10px] text-right font-medium transition-colors",
+                                "px-1.5 py-0.5 rounded text-[10px] sm:text-right font-medium transition-colors",
                                 reached
                                   ? "text-emerald-400 bg-emerald-500/10 font-bold"
                                   : "text-slate-600"
@@ -765,7 +765,7 @@ export const GoalsPage: React.FC = () => {
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
                 Goal Ownership
               </label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setFormType("PERSONAL")}
