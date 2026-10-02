@@ -14,6 +14,7 @@ import {
   CompanionPage,
   SurprisesPage,
   AnalyticsPage,
+  SettingsPage,
   NotFoundPage,
 } from "../pages";
 import { ProtectedRoute } from "./ProtectedRoute";
@@ -43,7 +44,7 @@ export const AppRoutes: React.FC = () => {
           <Route path={ROUTES.COMPANION} element={<CompanionPage />} />
           <Route path={ROUTES.SURPRISES} element={<SurprisesPage />} />
           <Route path={ROUTES.ANALYTICS} element={<AnalyticsPage />} />
-          <Route path={ROUTES.SETTINGS} element={<DashboardPage />} />
+          <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
         </Route>
       </Route>
 

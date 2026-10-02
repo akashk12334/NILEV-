@@ -423,7 +423,8 @@ export const PartnerPage: React.FC = () => {
                 {/* Your Avatar */}
                 <div className="flex items-center space-x-3">
                   <Avatar
-                    fallback={user.name || "You"}
+                    src={user.avatarUrl || user.profileImageUrl || undefined}
+                    fallback={user.nickname || user.name || "You"}
                     size="lg"
                     status="online"
                     partnerRing
@@ -434,7 +435,7 @@ export const PartnerPage: React.FC = () => {
                       You
                     </span>
                     <h3 className="text-base font-bold text-white truncate max-w-[140px]">
-                      {user.name}
+                      {user.nickname || user.name}
                     </h3>
                   </div>
                 </div>
@@ -461,7 +462,8 @@ export const PartnerPage: React.FC = () => {
                 {/* Partner Avatar */}
                 <div className="flex items-center space-x-3">
                   <Avatar
-                    fallback={partner.name || "Partner"}
+                    src={partner.avatarUrl || undefined}
+                    fallback={partner.nickname || partner.name || "Partner"}
                     size="lg"
                     status="online"
                     partnerRing
@@ -471,7 +473,7 @@ export const PartnerPage: React.FC = () => {
                       Partner
                     </span>
                     <h3 className="text-base font-bold text-white truncate max-w-[140px]">
-                      {partner.name}
+                      {partner.nickname || partner.name}
                     </h3>
                   </div>
                 </div>
@@ -503,7 +505,8 @@ export const PartnerPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar
-                      fallback={user.name || "You"}
+                      src={user.avatarUrl || user.profileImageUrl || undefined}
+                      fallback={user.nickname || user.name || "You"}
                       size="md"
                       status="online"
                       partnerRing
@@ -511,7 +514,7 @@ export const PartnerPage: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <CardTitle className="text-base text-white">
-                          {user.name}
+                          {user.nickname ? `${user.nickname} (${user.name})` : user.name}
                         </CardTitle>
                         <Badge variant="violet" size="sm">
                           You (Owner)

@@ -7,7 +7,9 @@ public class PartnerProfileResponse {
     private Long id;
     private String name;
     private String email;
+    private String nickname;
     private String avatarUrl;
+    private String profileImageUrl;
     private int xp;
     private int level;
     private int streak;
@@ -30,9 +32,18 @@ public class PartnerProfileResponse {
                                   String companionName, String companionType, int companionLevel, String companionMood,
                                   int habitsCompletedCount, int goalsCount,
                                   boolean isPartner, boolean readOnly) {
+        this(id, name, email, null, avatarUrl, xp, level, streak, companionName, companionType, companionLevel, companionMood, habitsCompletedCount, goalsCount, isPartner, readOnly);
+    }
+
+    public PartnerProfileResponse(Long id, String name, String email, String nickname, String avatarUrl,
+                                  int xp, int level, int streak,
+                                  String companionName, String companionType, int companionLevel, String companionMood,
+                                  int habitsCompletedCount, int goalsCount,
+                                  boolean isPartner, boolean readOnly) {
         this.id = id;
         this.name = name;
         this.email = email;
+        this.nickname = nickname;
         this.avatarUrl = avatarUrl;
         this.xp = xp;
         this.level = level;
@@ -49,10 +60,11 @@ public class PartnerProfileResponse {
 
     public static PartnerProfileResponse fromUser(User user, boolean isPartner) {
         if (user == null) return null;
-        return new PartnerProfileResponse(
+        PartnerProfileResponse r = new PartnerProfileResponse(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
+                user.getNickname(),
                 user.getAvatarUrl(),
                 user.getXp(),
                 user.getLevel(),
@@ -66,6 +78,16 @@ public class PartnerProfileResponse {
                 isPartner,
                 isPartner // If isPartner == true, readOnly == true!
         );
+        r.setProfileImageUrl(user.getProfileImageUrl() != null ? user.getProfileImageUrl() : user.getAvatarUrl());
+        return r;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 
     public Long getId() {
@@ -90,6 +112,14 @@ public class PartnerProfileResponse {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public String getAvatarUrl() {

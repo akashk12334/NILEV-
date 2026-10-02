@@ -39,9 +39,21 @@ public class SurpriseResponse {
         SurpriseResponse res = new SurpriseResponse();
         res.id = s.getId();
         res.senderId = s.getSender() != null ? s.getSender().getId() : null;
-        res.senderName = s.getSender() != null ? s.getSender().getName() : "Partner";
+        if (s.getSender() != null) {
+            res.senderName = (s.getSender().getNickname() != null && !s.getSender().getNickname().isBlank())
+                    ? s.getSender().getNickname()
+                    : s.getSender().getName();
+        } else {
+            res.senderName = "Partner";
+        }
         res.receiverId = s.getReceiver() != null ? s.getReceiver().getId() : null;
-        res.receiverName = s.getReceiver() != null ? s.getReceiver().getName() : "Partner";
+        if (s.getReceiver() != null) {
+            res.receiverName = (s.getReceiver().getNickname() != null && !s.getReceiver().getNickname().isBlank())
+                    ? s.getReceiver().getNickname()
+                    : s.getReceiver().getName();
+        } else {
+            res.receiverName = "Partner";
+        }
         res.type = s.getType();
         res.typeDisplayName = s.getType() != null ? s.getType().getDisplayName() : "Surprise";
         res.typeEmoji = s.getType() != null ? s.getType().getEmoji() : "✨";

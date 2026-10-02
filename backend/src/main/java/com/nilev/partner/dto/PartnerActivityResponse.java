@@ -41,11 +41,22 @@ public class PartnerActivityResponse {
         Long activityUserId = activity.getUser() != null ? activity.getUser().getId() : null;
         boolean isPartner = activityUserId != null && !activityUserId.equals(currentUserId);
 
+        String displayName = null;
+        String avatarUrl = null;
+        if (activity.getUser() != null) {
+            displayName = (activity.getUser().getNickname() != null && !activity.getUser().getNickname().isBlank())
+                    ? activity.getUser().getNickname()
+                    : activity.getUser().getName();
+            avatarUrl = (activity.getUser().getProfileImageUrl() != null && !activity.getUser().getProfileImageUrl().isBlank())
+                    ? activity.getUser().getProfileImageUrl()
+                    : activity.getUser().getAvatarUrl();
+        }
+
         return new PartnerActivityResponse(
                 activity.getId(),
                 activityUserId,
-                activity.getUser() != null ? activity.getUser().getName() : null,
-                activity.getUser() != null ? activity.getUser().getAvatarUrl() : null,
+                displayName,
+                avatarUrl,
                 activity.getActivityType(),
                 activity.getTitle(),
                 activity.getDescription(),

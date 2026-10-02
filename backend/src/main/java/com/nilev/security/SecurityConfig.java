@@ -52,6 +52,9 @@ public class SecurityConfig {
                                 "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout",
                                 "/api/v1/auth/ping",
+                                "/api/users/avatar/**",
+                                "/api/v1/users/avatar/**",
+                                "/uploads/**",
                                 "/error"
                         ).permitAll()
                         // Protected /me endpoint and everything else

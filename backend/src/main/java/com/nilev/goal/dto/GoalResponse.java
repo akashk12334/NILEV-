@@ -42,11 +42,17 @@ public class GoalResponse {
         GoalResponse r = new GoalResponse();
         r.setId(g.getId());
         r.setOwnerId(g.getOwner().getId());
-        r.setOwnerName(g.getOwner().getName());
+        String ownerDisplayName = (g.getOwner().getNickname() != null && !g.getOwner().getNickname().isBlank())
+                ? g.getOwner().getNickname()
+                : g.getOwner().getName();
+        r.setOwnerName(ownerDisplayName);
 
         if (g.getPartner() != null) {
             r.setPartnerId(g.getPartner().getId());
-            r.setPartnerName(g.getPartner().getName());
+            String partnerDisplayName = (g.getPartner().getNickname() != null && !g.getPartner().getNickname().isBlank())
+                    ? g.getPartner().getNickname()
+                    : g.getPartner().getName();
+            r.setPartnerName(partnerDisplayName);
         }
 
         r.setTitle(g.getTitle());

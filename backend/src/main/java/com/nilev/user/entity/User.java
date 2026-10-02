@@ -20,6 +20,9 @@ public class User extends BaseEntity {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
+    @Column(name = "nickname", length = 50)
+    private String nickname;
+
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
@@ -100,6 +103,22 @@ public class User extends BaseEntity {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getProfileImageUrl() {
+        return avatarUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.avatarUrl = profileImageUrl;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
     public Instant getLastLoginAt() {
@@ -300,8 +319,16 @@ public class User extends BaseEntity {
             return this;
         }
 
+        private String nickname;
+
+        public Builder nickname(String nickname) {
+            this.nickname = nickname;
+            return this;
+        }
+
         public User build() {
             User user = new User(name, email, passwordHash, avatarUrl, lastLoginAt, active, role);
+            user.setNickname(this.nickname);
             user.setXp(this.xp);
             user.setLevel(this.level);
             user.setStreak(this.streak);

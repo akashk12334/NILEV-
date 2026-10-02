@@ -41,7 +41,10 @@ public class NotificationResponse {
 
         if (n.getActor() != null) {
             res.actorId = n.getActor().getId();
-            res.actorName = n.getActor().getName();
+            String actorDisplayName = (n.getActor().getNickname() != null && !n.getActor().getNickname().isBlank())
+                    ? n.getActor().getNickname()
+                    : n.getActor().getName();
+            res.actorName = actorDisplayName;
         }
 
         res.referenceId = n.getReferenceId();

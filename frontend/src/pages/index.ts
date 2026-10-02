@@ -9,4 +9,5 @@ export * from "./GoalsPage";
 export * from "./CompanionPage";
 export * from "./SurprisesPage";
 export * from "./AnalyticsPage";
+export * from "./SettingsPage";
 export * from "./NotFoundPage";

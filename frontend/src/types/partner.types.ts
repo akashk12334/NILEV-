@@ -1,8 +1,10 @@
 export interface PartnerProfileResponse {
   id: number;
   name: string;
+  nickname?: string | null;
   email: string;
   avatarUrl?: string | null;
+  profileImageUrl?: string | null;
   xp: number;
   level: number;
   streak: number;

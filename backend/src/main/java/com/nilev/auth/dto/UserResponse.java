@@ -11,7 +11,9 @@ public class UserResponse {
     private Long id;
     private String name;
     private String email;
+    private String nickname;
     private String avatarUrl;
+    private String profileImageUrl;
     private Instant createdAt;
     private Instant updatedAt;
     private Instant lastLoginAt;
@@ -22,10 +24,17 @@ public class UserResponse {
 
     public UserResponse(Long id, String name, String email, String avatarUrl,
                         Instant createdAt, Instant updatedAt, Instant lastLoginAt, boolean active) {
+        this(id, name, email, null, avatarUrl, createdAt, updatedAt, lastLoginAt, active);
+    }
+
+    public UserResponse(Long id, String name, String email, String nickname, String avatarUrl,
+                        Instant createdAt, Instant updatedAt, Instant lastLoginAt, boolean active) {
         this.id = id;
         this.name = name;
         this.email = email;
+        this.nickname = nickname;
         this.avatarUrl = avatarUrl;
+        this.profileImageUrl = avatarUrl;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.lastLoginAt = lastLoginAt;
@@ -56,12 +65,30 @@ public class UserResponse {
         this.email = email;
     }
 
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl != null ? profileImageUrl : avatarUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+        this.avatarUrl = profileImageUrl;
+    }
+
     public String getAvatarUrl() {
         return avatarUrl;
     }
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+        this.profileImageUrl = avatarUrl;
     }
 
     public Instant getCreatedAt() {
@@ -104,7 +131,9 @@ public class UserResponse {
         private Long id;
         private String name;
         private String email;
+        private String nickname;
         private String avatarUrl;
+        private String profileImageUrl;
         private Instant createdAt;
         private Instant updatedAt;
         private Instant lastLoginAt;
@@ -125,8 +154,20 @@ public class UserResponse {
             return this;
         }
 
+        public Builder nickname(String nickname) {
+            this.nickname = nickname;
+            return this;
+        }
+
         public Builder avatarUrl(String avatarUrl) {
             this.avatarUrl = avatarUrl;
+            this.profileImageUrl = avatarUrl;
+            return this;
+        }
+
+        public Builder profileImageUrl(String profileImageUrl) {
+            this.profileImageUrl = profileImageUrl;
+            this.avatarUrl = profileImageUrl;
             return this;
         }
 
@@ -151,7 +192,7 @@ public class UserResponse {
         }
 
         public UserResponse build() {
-            return new UserResponse(id, name, email, avatarUrl, createdAt, updatedAt, lastLoginAt, active);
+            return new UserResponse(id, name, email, nickname, avatarUrl != null ? avatarUrl : profileImageUrl, createdAt, updatedAt, lastLoginAt, active);
         }
     }
 }

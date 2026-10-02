@@ -580,7 +580,7 @@ export const HabitsPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Your Habits</h1>
           <p className="text-sm text-slate-400 mt-0.5">
-            {user?.name?.split(" ")[0]}'s personal habit tracker · {doneToday}/{totalHabits} done today
+            {(user?.nickname?.trim() || user?.name?.split(" ")[0] || "You")}'s personal habit tracker · {doneToday}/{totalHabits} done today
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -6,7 +6,9 @@ public class UserDto {
     private Long id;
     private String name;
     private String email;
+    private String nickname;
     private String avatarUrl;
+    private String profileImageUrl;
     private String role;
     private boolean active;
     private Instant lastLoginAt;
@@ -18,10 +20,17 @@ public class UserDto {
 
     public UserDto(Long id, String name, String email, String avatarUrl, String role,
                    boolean active, Instant lastLoginAt, Instant createdAt, Instant updatedAt) {
+        this(id, name, email, null, avatarUrl, role, active, lastLoginAt, createdAt, updatedAt);
+    }
+
+    public UserDto(Long id, String name, String email, String nickname, String avatarUrl, String role,
+                   boolean active, Instant lastLoginAt, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.name = name;
         this.email = email;
+        this.nickname = nickname;
         this.avatarUrl = avatarUrl;
+        this.profileImageUrl = avatarUrl;
         this.role = role;
         this.active = active;
         this.lastLoginAt = lastLoginAt;
@@ -53,12 +62,30 @@ public class UserDto {
         this.email = email;
     }
 
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl != null ? profileImageUrl : avatarUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+        this.avatarUrl = profileImageUrl;
+    }
+
     public String getAvatarUrl() {
         return avatarUrl;
     }
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+        this.profileImageUrl = avatarUrl;
     }
 
     public String getRole() {
@@ -109,7 +136,9 @@ public class UserDto {
         private Long id;
         private String name;
         private String email;
+        private String nickname;
         private String avatarUrl;
+        private String profileImageUrl;
         private String role;
         private boolean active = true;
         private Instant lastLoginAt;
@@ -131,8 +160,20 @@ public class UserDto {
             return this;
         }
 
+        public Builder nickname(String nickname) {
+            this.nickname = nickname;
+            return this;
+        }
+
         public Builder avatarUrl(String avatarUrl) {
             this.avatarUrl = avatarUrl;
+            this.profileImageUrl = avatarUrl;
+            return this;
+        }
+
+        public Builder profileImageUrl(String profileImageUrl) {
+            this.profileImageUrl = profileImageUrl;
+            this.avatarUrl = profileImageUrl;
             return this;
         }
 
@@ -162,7 +203,7 @@ public class UserDto {
         }
 
         public UserDto build() {
-            return new UserDto(id, name, email, avatarUrl, role, active, lastLoginAt, createdAt, updatedAt);
+            return new UserDto(id, name, email, nickname, avatarUrl != null ? avatarUrl : profileImageUrl, role, active, lastLoginAt, createdAt, updatedAt);
         }
     }
 }

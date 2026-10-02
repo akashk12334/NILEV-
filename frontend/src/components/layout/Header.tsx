@@ -99,16 +99,16 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
       <div className="flex items-center space-x-2 sm:space-x-3.5 shrink-0">
         {/* Partner Status Pill */}
         {isConnected && partner ? (
-          <Tooltip content={`Paired with ${partner.name} 💜`} position="bottom">
+          <Tooltip content={`Paired with ${partner.nickname || partner.name} 💜`} position="bottom">
             <div className="hidden sm:flex items-center space-x-2 rounded-full border border-[rgba(168,85,247,0.22)] bg-[rgba(13,17,34,0.7)] px-2.5 py-1 backdrop-blur-md shadow-sm hover:border-violet-500/40 transition-colors">
               <Avatar
-                fallback={partner.name}
+                fallback={partner.nickname || partner.name}
                 src={partner.avatarUrl || undefined}
                 size="xs"
                 status="online"
                 partnerRing
               />
-              <span className="text-xs font-medium text-slate-300">{partner.name.split(" ")[0]}</span>
+              <span className="text-xs font-medium text-slate-300">{(partner.nickname || partner.name).split(" ")[0]}</span>
               <Sparkles className="h-3 w-3 text-pink-400" />
             </div>
           </Tooltip>
@@ -131,7 +131,8 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
           trigger={
             <div className="flex items-center space-x-2 cursor-pointer group">
               <Avatar
-                fallback={user?.name || user?.firstName || "Alex"}
+                src={user?.avatarUrl || user?.profileImageUrl || undefined}
+                fallback={user?.nickname || user?.name || user?.firstName || "Alex"}
                 size="sm"
                 status="online"
                 className="group-hover:ring-2 group-hover:ring-violet-500/50 transition-all"
@@ -141,7 +142,9 @@ export const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
           items={[
             {
               id: "profile-info",
-              label: user?.name ? `${user.name} (You)` : (user?.firstName ? `${user.firstName} (You)` : "Alex (You)"),
+              label: user?.nickname
+                ? `${user.nickname} (You)`
+                : (user?.name ? `${user.name} (You)` : (user?.firstName ? `${user.firstName} (You)` : "Alex (You)")),
               badge: (
                 <span className="text-[10px] text-violet-400">Coupled</span>
               ),

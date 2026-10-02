@@ -150,6 +150,7 @@ public class AuthServiceImpl implements AuthService {
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
+                .nickname(user.getNickname())
                 .avatarUrl(user.getAvatarUrl())
                 .active(user.isActive())
                 .lastLoginAt(user.getLastLoginAt())

@@ -278,7 +278,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Avatar
-                    fallback={partner.name}
+                    fallback={partner.nickname || partner.name}
                     src={partner.avatarUrl || undefined}
                     size="xs"
                     partnerRing
@@ -286,7 +286,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   />
                   <div className="flex flex-col">
                     <span className="text-[11px] font-semibold text-white">
-                      Partner: {partner.name.split(" ")[0]}
+                      Partner: {(partner.nickname || partner.name).split(" ")[0]}
                     </span>
                     <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
@@ -324,14 +324,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <div className="flex items-center space-x-2.5">
             <Avatar
-              fallback={user?.name || user?.firstName || "Alex"}
+              src={user?.avatarUrl || user?.profileImageUrl || undefined}
+              fallback={user?.nickname || user?.name || user?.firstName || "Alex"}
               size="sm"
               status="online"
             />
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
                 <span className="text-xs font-semibold text-white truncate">
-                  {user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Alex Rivera")}
+                  {user?.nickname || user?.name || (user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Alex Rivera")}
                 </span>
                 <span className="text-[10px] text-slate-400 truncate">
                   {user?.email || "alex@nilev.space"}

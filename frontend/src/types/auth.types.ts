@@ -2,7 +2,9 @@ export interface UserResponse {
   id: number;
   name: string;
   email: string;
+  nickname?: string | null;
   avatarUrl?: string | null;
+  profileImageUrl?: string | null;
   createdAt: string;
   updatedAt?: string | null;
   lastLoginAt?: string | null;

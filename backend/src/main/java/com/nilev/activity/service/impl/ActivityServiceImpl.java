@@ -160,8 +160,14 @@ public class ActivityServiceImpl implements ActivityService {
         ActivityResponse r = new ActivityResponse();
         r.setId(a.getId());
         r.setActorId(a.getActor().getId());
-        r.setActorName(a.getActor().getName());
-        r.setActorAvatarUrl(a.getActor().getAvatarUrl());
+        String actorDisplayName = (a.getActor().getNickname() != null && !a.getActor().getNickname().isBlank())
+                ? a.getActor().getNickname()
+                : a.getActor().getName();
+        r.setActorName(actorDisplayName);
+        String actorAvatar = (a.getActor().getProfileImageUrl() != null && !a.getActor().getProfileImageUrl().isBlank())
+                ? a.getActor().getProfileImageUrl()
+                : a.getActor().getAvatarUrl();
+        r.setActorAvatarUrl(actorAvatar);
         r.setType(a.getType());
         r.setReferenceId(a.getReferenceId());
         r.setTitle(a.getTitle());

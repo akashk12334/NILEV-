@@ -280,7 +280,7 @@ export const GoalsPage: React.FC = () => {
     }
   };
 
-  const partnerName = partnerStatus?.partner?.name || "Partner";
+  const partnerName = partnerStatus?.partner?.nickname || partnerStatus?.partner?.name || "Partner";
 
   return (
     <div className="space-y-8 animate-fadeIn max-w-6xl mx-auto pb-16">

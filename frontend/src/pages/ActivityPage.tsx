@@ -312,7 +312,7 @@ export const ActivityPage: React.FC = () => {
     }
   };
 
-  const partnerName = partnerStatus?.partner?.name || "Partner";
+  const partnerName = partnerStatus?.partner?.nickname || partnerStatus?.partner?.name || "Partner";
   const hasPartner = partnerStatus?.status === "CONNECTED";
 
   return (

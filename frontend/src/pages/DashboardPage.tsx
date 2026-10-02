@@ -137,8 +137,8 @@ export const DashboardPage: React.FC = () => {
 
   const isConnected = partnerStatus?.status === "CONNECTED";
   const partner = partnerStatus?.partner;
-  const firstName = (user?.name || "Friend").split(" ")[0];
-  const partnerName = partner ? partner.name.split(" ")[0] : "Partner";
+  const firstName = user?.nickname?.trim() || (user?.name || "Friend").split(" ")[0];
+  const partnerName = partner?.nickname?.trim() || (partner ? partner.name.split(" ")[0] : "Partner");
 
   // Load goals & companions dynamically
   React.useEffect(() => {

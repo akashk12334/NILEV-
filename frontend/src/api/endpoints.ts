@@ -10,6 +10,7 @@ export const ENDPOINTS = {
   USERS: {
     ME: "/users/me",
     BY_ID: (id: number | string) => `/users/${id}`,
+    PROFILE_PICTURE: "/users/me/profile-picture",
   },
   PARTNERS: {
     BASE: "/partners",
