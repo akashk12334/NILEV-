@@ -55,10 +55,11 @@ public class CompanionServiceImpl implements CompanionService {
                 .orElseGet(() -> createDefaultCompanion(currentUserId));
 
         // Auto-heal / sync XP from history if any previous interactions didn't persist XP
-        int totalEarned = historyRepo.sumXpGainedByCompanionId(companion.getId());
-        if (totalEarned > companion.getXp()) {
-            companion.setXp(totalEarned);
-            int newLevel = CompanionLevelCalculator.calculateLevelFromXp(totalEarned);
+        Long totalEarned = historyRepo.sumXpGainedByCompanionId(companion.getId());
+        int earnedXp = totalEarned != null ? totalEarned.intValue() : 0;
+        if (earnedXp > companion.getXp()) {
+            companion.setXp(earnedXp);
+            int newLevel = CompanionLevelCalculator.calculateLevelFromXp(earnedXp);
             companion.setLevel(newLevel);
             companion = companionRepo.save(companion);
         }
@@ -93,8 +94,7 @@ public class CompanionServiceImpl implements CompanionService {
                 companion.getAnimalType().getEmoji()
         ));
 
-        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
-        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+        int todayInteractions = getAndSyncDailyInteractionsCount(companion);
         return CompanionResponse.fromEntity(companion, currentUserId, todayInteractions);
     }
 
@@ -111,8 +111,7 @@ public class CompanionServiceImpl implements CompanionService {
         }
 
         companionRepo.save(companion);
-        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
-        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+        int todayInteractions = getAndSyncDailyInteractionsCount(companion);
         return CompanionResponse.fromEntity(companion, currentUserId, todayInteractions);
     }
 
@@ -127,8 +126,7 @@ public class CompanionServiceImpl implements CompanionService {
         Companion companion = companionRepo.findByUserId(partnerId)
                 .orElseThrow(() -> new NilevApiException("Partner has not chosen a companion yet", HttpStatus.NOT_FOUND));
 
-        Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
-        int todayInteractions = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
+        int todayInteractions = getAndSyncDailyInteractionsCount(companion);
         return CompanionResponse.fromEntity(companion, currentUserId, todayInteractions);
     }
 
@@ -152,14 +150,7 @@ public class CompanionServiceImpl implements CompanionService {
             companionRepo.save(companion);
             return 0;
         }
-        Instant startOfDay = today.atStartOfDay(ZoneOffset.UTC).toInstant();
-        int historyCount = historyRepo.countInteractionsToday(companion.getId(), startOfDay);
-        int maxCount = Math.max(companion.getDailyInteractionsCount(), historyCount);
-        if (maxCount != companion.getDailyInteractionsCount()) {
-            companion.setDailyInteractionsCount(maxCount);
-            companionRepo.save(companion);
-        }
-        return maxCount;
+        return companion.getDailyInteractionsCount();
     }
 
     @Override

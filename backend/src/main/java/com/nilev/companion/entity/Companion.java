@@ -63,8 +63,8 @@ public class Companion extends BaseEntity {
     @Column(name = "last_interaction_date")
     private LocalDate lastInteractionDate = LocalDate.now();
 
-    @Column(name = "daily_interactions_count")
-    private int dailyInteractionsCount = 0;
+    @Column(name = "daily_interactions_count", nullable = false)
+    private Integer dailyInteractionsCount = 0;
 
     public Companion() {}
 
@@ -78,6 +78,7 @@ public class Companion extends BaseEntity {
         this.energy = 90;
         this.mood = CompanionMood.HAPPY;
         this.lastInteractionDate = LocalDate.now();
+        this.dailyInteractionsCount = 0;
     }
 
     // ── Getters & Setters ───────────────────────────────────────────
@@ -109,8 +110,8 @@ public class Companion extends BaseEntity {
     public LocalDate getLastInteractionDate() { return lastInteractionDate; }
     public void setLastInteractionDate(LocalDate lastInteractionDate) { this.lastInteractionDate = lastInteractionDate; }
 
-    public int getDailyInteractionsCount() { return dailyInteractionsCount; }
-    public void setDailyInteractionsCount(int dailyInteractionsCount) { this.dailyInteractionsCount = dailyInteractionsCount; }
+    public int getDailyInteractionsCount() { return dailyInteractionsCount != null ? dailyInteractionsCount : 0; }
+    public void setDailyInteractionsCount(Integer dailyInteractionsCount) { this.dailyInteractionsCount = dailyInteractionsCount != null ? dailyInteractionsCount : 0; }
 
     // ── Builder ─────────────────────────────────────────────────────
 
