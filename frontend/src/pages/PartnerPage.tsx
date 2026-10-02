@@ -539,9 +539,9 @@ export const PartnerPage: React.FC = () => {
                       <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
                       Level {user.level || 1}
                     </span>
-                    <span className="text-slate-400">{user.xp || 150} / 500 XP</span>
+                    <span className="text-slate-400">{user.xp ?? 0} / 500 XP</span>
                   </div>
-                  <ProgressBar value={((user.xp || 150) % 500) / 5} variant="violet" size="sm" />
+                  <ProgressBar value={((user.xp ?? 0) % 500) / 5} variant="violet" size="sm" />
                 </div>
 
                 {/* Quick Stats Grid */}
@@ -582,23 +582,39 @@ export const PartnerPage: React.FC = () => {
                         Celestial Companion
                       </span>
                     </div>
-                    <Badge variant="violet" size="sm">
-                      Level {user.companionLevel || 1}
-                    </Badge>
+                    {user.companionName && (
+                      <Badge variant="violet" size="sm">
+                        Level {user.companionLevel || 1}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-semibold text-violet-200">
-                        {user.companionName || "Starlight"}
-                      </span>
-                      <span className="text-slate-400 text-[11px] block">
-                        {user.companionType || "CELESTIAL_FOX"}
+                  {user.companionName ? (
+                    <div className="flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-semibold text-violet-200">
+                          {user.companionName}
+                        </span>
+                        <span className="text-slate-400 text-[11px] block">
+                          {user.companionType || "Companion"}
+                        </span>
+                      </div>
+                      <span className="rounded-lg bg-violet-500/10 px-2 py-1 text-[11px] text-violet-300 font-medium">
+                        Mood: {user.companionMood || "Happy"} ✨
                       </span>
                     </div>
-                    <span className="rounded-lg bg-violet-500/10 px-2 py-1 text-[11px] text-violet-300 font-medium">
-                      Mood: {user.companionMood || "Joyful"} ✨
-                    </span>
-                  </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-xs py-1">
+                      <span className="text-slate-400 text-xs italic">
+                        No companion chosen yet
+                      </span>
+                      <a
+                        href="/companion"
+                        className="text-violet-400 hover:text-violet-300 text-xs font-semibold underline underline-offset-2"
+                      >
+                        Choose in Sanctuary →
+                      </a>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -645,9 +661,9 @@ export const PartnerPage: React.FC = () => {
                       <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
                       Level {partner.level || 1}
                     </span>
-                    <span className="text-slate-400">{partner.xp || 200} / 500 XP</span>
+                    <span className="text-slate-400">{partner.xp ?? 0} / 500 XP</span>
                   </div>
-                  <ProgressBar value={((partner.xp || 200) % 500) / 5} variant="indigo" size="sm" />
+                  <ProgressBar value={((partner.xp ?? 0) % 500) / 5} variant="indigo" size="sm" />
                 </div>
 
                 {/* Quick Stats Grid */}
@@ -688,23 +704,31 @@ export const PartnerPage: React.FC = () => {
                         Partner Companion
                       </span>
                     </div>
-                    <Badge variant="rose" size="sm">
-                      Level {partner.companionLevel || 1}
-                    </Badge>
+                    {partner.companionName && (
+                      <Badge variant="rose" size="sm">
+                        Level {partner.companionLevel || 1}
+                      </Badge>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-semibold text-pink-200">
-                        {partner.companionName || "Nebula"}
-                      </span>
-                      <span className="text-slate-400 text-[11px] block">
-                        {partner.companionType || "ASTRAL_OWL"}
+                  {partner.companionName ? (
+                    <div className="flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-semibold text-pink-200">
+                          {partner.companionName}
+                        </span>
+                        <span className="text-slate-400 text-[11px] block">
+                          {partner.companionType || "Companion"}
+                        </span>
+                      </div>
+                      <span className="rounded-lg bg-pink-500/10 px-2 py-1 text-[11px] text-pink-300 font-medium">
+                        Mood: {partner.companionMood || "Happy"} ✨
                       </span>
                     </div>
-                    <span className="rounded-lg bg-pink-500/10 px-2 py-1 text-[11px] text-pink-300 font-medium">
-                      Mood: {partner.companionMood || "Joyful"} ✨
-                    </span>
-                  </div>
+                  ) : (
+                    <div className="text-slate-400 text-xs italic py-1">
+                      Partner hasn&apos;t chosen a companion yet
+                    </div>
+                  )}
                 </div>
 
                 {/* Core Rule Enforcement Notice */}

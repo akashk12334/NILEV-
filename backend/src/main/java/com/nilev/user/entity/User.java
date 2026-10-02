@@ -33,31 +33,31 @@ public class User extends BaseEntity {
     private String role = "USER";
 
     @Column(nullable = false)
-    private int xp = 150;
+    private int xp = 0;
 
     @Column(nullable = false)
     private int level = 1;
 
     @Column(nullable = false)
-    private int streak = 3;
+    private int streak = 0;
 
     @Column(name = "companion_name", length = 50)
-    private String companionName = "Starlight";
+    private String companionName;
 
     @Column(name = "companion_type", length = 50)
-    private String companionType = "CELESTIAL_FOX";
+    private String companionType;
 
     @Column(name = "companion_level", nullable = false)
     private int companionLevel = 1;
 
     @Column(name = "companion_mood", length = 50)
-    private String companionMood = "Joyful";
+    private String companionMood;
 
     @Column(name = "habits_completed_count", nullable = false)
-    private int habitsCompletedCount = 12;
+    private int habitsCompletedCount = 0;
 
     @Column(name = "goals_count", nullable = false)
-    private int goalsCount = 3;
+    private int goalsCount = 0;
 
     public User() {
     }
@@ -229,15 +229,15 @@ public class User extends BaseEntity {
         private Instant lastLoginAt;
         private boolean active = true;
         private String role = "USER";
-        private int xp = 150;
+        private int xp = 0;
         private int level = 1;
-        private int streak = 3;
-        private String companionName = "Starlight";
-        private String companionType = "CELESTIAL_FOX";
+        private int streak = 0;
+        private String companionName;
+        private String companionType;
         private int companionLevel = 1;
-        private String companionMood = "Joyful";
-        private int habitsCompletedCount = 12;
-        private int goalsCount = 3;
+        private String companionMood;
+        private int habitsCompletedCount = 0;
+        private int goalsCount = 0;
 
         public Builder name(String name) {
             this.name = name;

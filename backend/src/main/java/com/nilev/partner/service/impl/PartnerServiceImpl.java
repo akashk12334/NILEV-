@@ -10,13 +10,22 @@ import com.nilev.partner.repository.*;
 import com.nilev.partner.service.PartnerService;
 import com.nilev.user.entity.User;
 import com.nilev.user.repository.UserRepository;
+import com.nilev.companion.entity.Companion;
+import com.nilev.companion.repository.CompanionRepository;
+import com.nilev.habit.entity.Habit;
+import com.nilev.habit.repository.HabitCompletionRepository;
+import com.nilev.habit.repository.HabitRepository;
+import com.nilev.goal.repository.GoalRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -27,17 +36,29 @@ public class PartnerServiceImpl implements PartnerService {
     private final PartnerInvitationRepository partnerInvitationRepository;
     private final PartnerActivityRepository partnerActivityRepository;
     private final ActivityService activityService;
+    private final CompanionRepository companionRepository;
+    private final HabitRepository habitRepository;
+    private final HabitCompletionRepository habitCompletionRepository;
+    private final GoalRepository goalRepository;
 
     public PartnerServiceImpl(UserRepository userRepository,
                               PartnerConnectionRepository partnerConnectionRepository,
                               PartnerInvitationRepository partnerInvitationRepository,
                               PartnerActivityRepository partnerActivityRepository,
-                              ActivityService activityService) {
+                              ActivityService activityService,
+                              CompanionRepository companionRepository,
+                              HabitRepository habitRepository,
+                              HabitCompletionRepository habitCompletionRepository,
+                              GoalRepository goalRepository) {
         this.userRepository = userRepository;
         this.partnerConnectionRepository = partnerConnectionRepository;
         this.partnerInvitationRepository = partnerInvitationRepository;
         this.partnerActivityRepository = partnerActivityRepository;
         this.activityService = activityService;
+        this.companionRepository = companionRepository;
+        this.habitRepository = habitRepository;
+        this.habitCompletionRepository = habitCompletionRepository;
+        this.goalRepository = goalRepository;
     }
 
     @Override
@@ -116,7 +137,7 @@ public class PartnerServiceImpl implements PartnerService {
         );
 
         return PartnerStatusResponse.invitationSent(
-                PartnerProfileResponse.fromUser(currentUser, false),
+                buildPartnerProfile(currentUser, false),
                 InvitationResponse.fromEntity(invitation)
         );
     }
@@ -218,10 +239,15 @@ public class PartnerServiceImpl implements PartnerService {
                 String.format("{\"partnerName\":\"%s\"}", currentUser.getName())
         );
 
+        int sharedStreak = computeSharedStreak(currentUser.getId(), sender.getId(), LocalDate.now());
+        if (sharedStreak == 0 && connection.getSharedStreak() > 0) {
+            sharedStreak = connection.getSharedStreak();
+        }
+
         return PartnerStatusResponse.connected(
-                PartnerProfileResponse.fromUser(currentUser, false),
-                PartnerProfileResponse.fromUser(sender, true),
-                connection.getSharedStreak(),
+                buildPartnerProfile(currentUser, false),
+                buildPartnerProfile(sender, true),
+                sharedStreak,
                 connection.getConnectedAt()
         );
     }
@@ -248,7 +274,7 @@ public class PartnerServiceImpl implements PartnerService {
         invitation.setStatus(InvitationStatus.REJECTED);
         partnerInvitationRepository.save(invitation);
 
-        return PartnerStatusResponse.noPartner(PartnerProfileResponse.fromUser(currentUser, false));
+        return PartnerStatusResponse.noPartner(buildPartnerProfile(currentUser, false));
     }
 
     @Override
@@ -280,10 +306,14 @@ public class PartnerServiceImpl implements PartnerService {
         if (connectionOpt.isPresent()) {
             PartnerConnection conn = connectionOpt.get();
             User partner = conn.getPartnerOf(currentUserId);
+            int sharedStreak = computeSharedStreak(currentUser.getId(), partner.getId(), LocalDate.now());
+            if (sharedStreak == 0 && conn.getSharedStreak() > 0) {
+                sharedStreak = conn.getSharedStreak();
+            }
             return PartnerStatusResponse.connected(
-                    PartnerProfileResponse.fromUser(currentUser, false),
-                    PartnerProfileResponse.fromUser(partner, true),
-                    conn.getSharedStreak(),
+                    buildPartnerProfile(currentUser, false),
+                    buildPartnerProfile(partner, true),
+                    sharedStreak,
                     conn.getConnectedAt()
             );
         }
@@ -292,7 +322,7 @@ public class PartnerServiceImpl implements PartnerService {
         List<PartnerInvitation> received = partnerInvitationRepository.findByReceiverIdAndStatus(currentUserId, InvitationStatus.PENDING);
         if (!received.isEmpty()) {
             return PartnerStatusResponse.invitationReceived(
-                    PartnerProfileResponse.fromUser(currentUser, false),
+                    buildPartnerProfile(currentUser, false),
                     InvitationResponse.fromEntity(received.get(0))
             );
         }
@@ -301,13 +331,117 @@ public class PartnerServiceImpl implements PartnerService {
         List<PartnerInvitation> sent = partnerInvitationRepository.findBySenderIdAndStatus(currentUserId, InvitationStatus.PENDING);
         if (!sent.isEmpty()) {
             return PartnerStatusResponse.invitationSent(
-                    PartnerProfileResponse.fromUser(currentUser, false),
+                    buildPartnerProfile(currentUser, false),
                     InvitationResponse.fromEntity(sent.get(0))
             );
         }
 
         // 4. No partner
-        return PartnerStatusResponse.noPartner(PartnerProfileResponse.fromUser(currentUser, false));
+        return PartnerStatusResponse.noPartner(buildPartnerProfile(currentUser, false));
+    }
+
+    public PartnerProfileResponse buildPartnerProfile(User user, boolean isPartner) {
+        if (user == null) return null;
+
+        Long userId = user.getId();
+
+        // 1. Live companion data from companions table
+        Optional<Companion> companionOpt = companionRepository.findByUserId(userId);
+        String compName = companionOpt.map(Companion::getName).orElse(user.getCompanionName());
+        String compType = companionOpt.map(c -> c.getAnimalType().name()).orElse(user.getCompanionType());
+        int compLevel = companionOpt.map(Companion::getLevel).orElse(user.getCompanionLevel());
+        String compMood = companionOpt.map(c -> c.getMood().name()).orElse(user.getCompanionMood());
+        int currentXp = companionOpt.map(Companion::getXp).orElse(user.getXp());
+        int currentLevel = companionOpt.map(Companion::getLevel).orElse(user.getLevel());
+
+        // 2. Live habit completions & streak
+        List<Habit> activeHabits = habitRepository.findByUserIdAndActiveTrueOrderByCreatedAtDesc(userId);
+        LocalDate today = LocalDate.now();
+        int maxStreak = 0;
+        int totalCompletedCount = 0;
+        for (Habit h : activeHabits) {
+            List<LocalDate> dates = habitCompletionRepository.findCompletedDatesByHabitId(h.getId());
+            totalCompletedCount += dates.size();
+            int hStreak = computeHabitStreak(dates, today);
+            if (hStreak > maxStreak) {
+                maxStreak = hStreak;
+            }
+        }
+        if (maxStreak == 0 && user.getStreak() > 0 && activeHabits.isEmpty()) {
+            maxStreak = user.getStreak();
+        }
+        if (totalCompletedCount == 0 && user.getHabitsCompletedCount() > 0 && activeHabits.isEmpty()) {
+            totalCompletedCount = user.getHabitsCompletedCount();
+        }
+
+        // 3. Live personal goals count
+        int goalsCount = goalRepository.findPersonalGoals(userId).size();
+        if (goalsCount == 0 && user.getGoalsCount() > 0) {
+            goalsCount = user.getGoalsCount();
+        }
+
+        PartnerProfileResponse res = new PartnerProfileResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getNickname(),
+                user.getAvatarUrl(),
+                currentXp,
+                currentLevel,
+                maxStreak,
+                compName,
+                compType,
+                compLevel,
+                compMood,
+                totalCompletedCount,
+                goalsCount,
+                isPartner,
+                isPartner
+        );
+        res.setProfileImageUrl(user.getProfileImageUrl() != null ? user.getProfileImageUrl() : user.getAvatarUrl());
+        return res;
+    }
+
+    private int computeHabitStreak(List<LocalDate> dates, LocalDate today) {
+        if (dates == null || dates.isEmpty()) return 0;
+        int streak = 0;
+        LocalDate cursor = today;
+        if (!dates.contains(today)) {
+            cursor = today.minusDays(1);
+        }
+        while (dates.contains(cursor)) {
+            streak++;
+            cursor = cursor.minusDays(1);
+        }
+        return streak;
+    }
+
+    private int computeSharedStreak(Long u1, Long u2, LocalDate today) {
+        List<Habit> habits1 = habitRepository.findByUserIdAndActiveTrueOrderByCreatedAtDesc(u1);
+        List<Habit> habits2 = habitRepository.findByUserIdAndActiveTrueOrderByCreatedAtDesc(u2);
+
+        Set<LocalDate> dates1 = new HashSet<>();
+        for (Habit h : habits1) {
+            dates1.addAll(habitCompletionRepository.findCompletedDatesByHabitId(h.getId()));
+        }
+        Set<LocalDate> dates2 = new HashSet<>();
+        for (Habit h : habits2) {
+            dates2.addAll(habitCompletionRepository.findCompletedDatesByHabitId(h.getId()));
+        }
+
+        dates1.retainAll(dates2);
+        if (dates1.isEmpty()) return 0;
+
+        int streak = 0;
+        LocalDate cursor = today;
+        if (!dates1.contains(today)) {
+            cursor = today.minusDays(1);
+        }
+        while (dates1.contains(cursor)) {
+            streak++;
+            cursor = cursor.minusDays(1);
+        }
+        return streak;
     }
 
     @Override
