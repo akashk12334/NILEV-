@@ -12,19 +12,28 @@ import {
   BarChart2,
   Pencil,
   Sparkles,
+  Calendar,
+  Layers,
+  Heart,
+  X,
+  User,
+  Users,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "../constants";
 import { useHabits } from "../hooks/useHabits";
 import { useAuth } from "../hooks/useAuth";
+import { usePartner } from "../hooks/usePartner";
 import {
   Button,
   Card,
   Badge,
   ProgressBar,
-  ProgressRing,
   useToast,
   Modal,
   StatCard,
 } from "../components/ui";
+import { BulkCreateHabitsModal } from "../components/habits/BulkCreateHabitsModal";
 import type {
   HabitResponse,
   HabitFilter,
@@ -42,6 +51,7 @@ const FREQUENCY_LABELS: Record<HabitFrequency, string> = {
   WEEKENDS: "Weekends",
   WEEKLY: "Weekly",
   MONTHLY: "Monthly",
+  CUSTOM: "Custom",
 };
 
 const TOD_LABELS: Record<HabitTimeOfDay, string> = {
@@ -82,7 +92,6 @@ const FILTERS: { id: HabitFilter; label: string }[] = [
   { id: "evening", label: "Evening" },
 ];
 
-// ── helper to decide badge colour from category ───────────────────
 function categoryBadgeVariant(cat: string) {
   const map: Record<string, string> = {
     Health: "emerald", Fitness: "emerald", Mindfulness: "violet",
@@ -92,28 +101,90 @@ function categoryBadgeVariant(cat: string) {
   return (map[cat] ?? "secondary") as "violet" | "rose" | "indigo" | "secondary" | "amber" | "emerald";
 }
 
+function formatHabitDate(dateStr?: string | null) {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+// ── Daily Status Badge ───────────────────────────────────────────
+function DailyStatusBadge({ status }: { status?: string }) {
+  switch (status) {
+    case "COMPLETED":
+      return (
+        <Badge variant="emerald" size="sm" className="font-semibold shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+          <Check className="h-3 w-3 mr-1 stroke-[3]" /> Completed
+        </Badge>
+      );
+    case "EXPIRED":
+      return (
+        <Badge variant="secondary" size="sm" className="bg-slate-800 text-slate-400 border-slate-700">
+          <X className="h-3 w-3 mr-1" /> Expired
+        </Badge>
+      );
+    case "NOT_STARTED":
+      return (
+        <Badge variant="indigo" size="sm">
+          <Clock className="h-3 w-3 mr-1" /> Starts Soon
+        </Badge>
+      );
+    case "MISSED":
+      return (
+        <Badge variant="amber" size="sm">
+          <AlertCircle className="h-3 w-3 mr-1" /> Missed
+        </Badge>
+      );
+    case "PENDING":
+    default:
+      return (
+        <Badge variant="violet" size="sm" className="bg-violet-950/60 text-violet-300 border-violet-500/30">
+          <span className="h-1.5 w-1.5 rounded-full bg-violet-400 mr-1.5 animate-pulse inline-block" /> Pending
+        </Badge>
+      );
+  }
+}
+
 // ── Completion Check Button ───────────────────────────────────────
 function CheckButton({
   done,
   loading,
+  disabled,
   onClick,
   color,
+  title,
 }: {
   done: boolean;
   loading: boolean;
+  disabled?: boolean;
   onClick: () => void;
   color: string;
+  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      disabled={loading}
+      disabled={loading || disabled}
+      title={title || (done ? "Mark incomplete" : "Mark complete")}
       aria-label={done ? "Mark incomplete" : "Mark complete"}
       className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950 ${
         done
           ? "border-transparent text-white shadow-lg"
           : "border-slate-600 bg-transparent hover:border-slate-400 text-transparent"
-      } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+      } ${
+        disabled
+          ? "opacity-50 cursor-not-allowed border-slate-700"
+          : loading
+          ? "opacity-50 cursor-wait"
+          : "cursor-pointer"
+      }`}
       style={done ? { backgroundColor: color, boxShadow: `0 0 16px ${color}60` } : {}}
     >
       {loading ? (
@@ -123,8 +194,7 @@ function CheckButton({
       ) : (
         <Check className="h-4.5 w-4.5 stroke-[3] text-slate-600 group-hover:text-slate-400 transition-colors" />
       )}
-      {/* ripple on complete */}
-      {done && (
+      {done && !disabled && (
         <span
           className="absolute inset-0 rounded-full animate-ping opacity-25"
           style={{ backgroundColor: color }}
@@ -134,27 +204,40 @@ function CheckButton({
   );
 }
 
-// ── Habit Card ────────────────────────────────────────────────────
+// ── Habit Card (Supports MY HABITS & PARTNER HABITS view-only) ─────
 function HabitCard({
   habit,
+  isPartner = false,
+  partnerDisplayName,
   onToggle,
   onEdit,
   onDelete,
   toggling,
 }: {
   habit: HabitResponse;
-  onToggle: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  toggling: boolean;
+  isPartner?: boolean;
+  partnerDisplayName?: string;
+  onToggle?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  toggling?: boolean;
 }) {
   const [showStats, setShowStats] = React.useState(false);
+
+  const isExpired = habit.dailyStatus === "EXPIRED";
+  const isNotStarted = habit.dailyStatus === "NOT_STARTED";
+  const isCompleted = habit.completedToday || habit.dailyStatus === "COMPLETED";
+
+  const startDateFormatted = formatHabitDate(habit.startDate);
+  const endDateFormatted = formatHabitDate(habit.endDate);
 
   return (
     <div
       className={`group relative rounded-2xl border transition-all duration-300 overflow-hidden ${
-        habit.completedToday
+        isCompleted
           ? "border-[color:var(--habit-color)]/40 bg-slate-900/60"
+          : isExpired
+          ? "border-slate-800/50 bg-slate-950/40 opacity-75"
           : "border-slate-800/70 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/60"
       }`}
       style={{ "--habit-color": habit.color } as React.CSSProperties}
@@ -163,52 +246,80 @@ function HabitCard({
       <div
         className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl transition-all duration-300"
         style={{
-          backgroundColor: habit.completedToday ? habit.color : "transparent",
-          boxShadow: habit.completedToday ? `0 0 12px ${habit.color}80` : "none",
+          backgroundColor: isCompleted ? habit.color : isPartner ? "#EC4899" : "transparent",
+          boxShadow: isCompleted ? `0 0 12px ${habit.color}80` : "none",
         }}
       />
 
       <div className="pl-4 pr-4 pt-4 pb-3">
+        {/* partner banner if viewing partner habit */}
+        {isPartner && (
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-pink-400 mb-2 bg-pink-950/20 px-2 py-0.5 rounded-md border border-pink-500/20 w-fit">
+            <Heart className="h-2.5 w-2.5 fill-pink-400 text-pink-400" />
+            <span>{habit.partnerNickname || partnerDisplayName || "Partner"}'s Habit</span>
+            <span className="text-slate-500">• View Only</span>
+          </div>
+        )}
+
         {/* top row */}
         <div className="flex items-start gap-3">
-          {/* check button */}
+          {/* check button: disabled for partner habits or expired/unstarted habits */}
           <CheckButton
-            done={habit.completedToday}
-            loading={toggling}
-            onClick={onToggle}
+            done={isCompleted}
+            loading={Boolean(toggling)}
+            disabled={isPartner || isExpired || isNotStarted}
+            title={
+              isPartner
+                ? `${habit.partnerNickname || partnerDisplayName || "Partner"}'s habit (View-only)`
+                : isExpired
+                ? "This habit has ended and cannot be completed"
+                : isNotStarted
+                ? `Starts on ${startDateFormatted}`
+                : undefined
+            }
+            onClick={onToggle || (() => {})}
             color={habit.color}
           />
 
           {/* icon + name */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
               <span className="text-lg leading-none">{habit.icon}</span>
               <h3
                 className={`text-sm font-bold leading-tight transition-colors ${
-                  habit.completedToday ? "text-slate-400 line-through" : "text-white"
+                  isCompleted ? "text-slate-400 line-through" : isExpired ? "text-slate-500" : "text-white"
                 }`}
               >
                 {habit.name}
               </h3>
+              <DailyStatusBadge status={habit.dailyStatus} />
             </div>
+
             {habit.description && (
               <p className="text-[11px] text-slate-500 leading-snug line-clamp-1 mb-1.5">
                 {habit.description}
               </p>
             )}
 
-            {/* meta row */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* meta row: category, frequency, dates */}
+            <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-400 mt-1">
               <Badge variant={categoryBadgeVariant(habit.category)} size="sm">
                 {habit.category}
               </Badge>
-              <span className="text-[10px] text-slate-500 flex items-center gap-1">
+              <span className="text-slate-500 flex items-center gap-1">
                 <Clock className="h-2.5 w-2.5" />
                 {TOD_LABELS[habit.timeOfDay]}
               </span>
-              <span className="text-[10px] text-slate-500">
-                {FREQUENCY_LABELS[habit.frequency]}
+              <span className="text-slate-500">
+                {FREQUENCY_LABELS[habit.frequency] || habit.frequency}
               </span>
+              {startDateFormatted && (
+                <span className="text-slate-500 flex items-center gap-1">
+                  <Calendar className="h-2.5 w-2.5 text-violet-400" />
+                  {startDateFormatted}
+                  {endDateFormatted ? ` – ${endDateFormatted}` : " (Ongoing)"}
+                </span>
+              )}
             </div>
           </div>
 
@@ -216,33 +327,28 @@ function HabitCard({
           <div className="flex flex-col items-end gap-1 shrink-0">
             <div className="flex items-center gap-1 text-xs font-bold font-mono text-amber-400">
               <Flame className="h-3.5 w-3.5 fill-amber-400" />
-              <span>{habit.currentStreak}d</span>
+              <span>{habit.currentStreak || 0}d</span>
             </div>
-            {habit.completedToday && (
-              <Badge variant="emerald" size="sm" withDot>
-                Done
-              </Badge>
-            )}
           </div>
         </div>
 
         {/* progress bar */}
         <div className="mt-3">
           <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-            <span>Weekly</span>
-            <span className="font-mono font-medium">{habit.weeklyCompletion.toFixed(0)}%</span>
+            <span>Weekly Consistency</span>
+            <span className="font-mono font-medium">{(habit.weeklyCompletion || 0).toFixed(0)}%</span>
           </div>
           <ProgressBar
-            value={habit.weeklyCompletion}
+            value={habit.weeklyCompletion || 0}
             size="sm"
             variant={
-              habit.completedToday
+              isCompleted
                 ? "emerald"
-                : habit.weeklyCompletion > 60
+                : (habit.weeklyCompletion || 0) > 60
                 ? "violet"
                 : "amber"
             }
-            glow={habit.weeklyCompletion >= 80}
+            glow={(habit.weeklyCompletion || 0) >= 80}
           />
         </div>
 
@@ -250,9 +356,9 @@ function HabitCard({
         {showStats && (
           <div className="mt-3 pt-3 border-t border-slate-800/60 grid grid-cols-3 gap-2 animate-in fade-in duration-150">
             {[
-              { label: "Streak", value: `${habit.currentStreak}d`, sub: `Best: ${habit.longestStreak}d`, color: "text-amber-400" },
-              { label: "Monthly", value: `${habit.monthlyCompletion.toFixed(0)}%`, sub: "Last 30 days", color: "text-violet-400" },
-              { label: "Total", value: habit.totalCompletions, sub: "completions", color: "text-emerald-400" },
+              { label: "Streak", value: `${habit.currentStreak || 0}d`, sub: `Best: ${habit.longestStreak || 0}d`, color: "text-amber-400" },
+              { label: "Monthly", value: `${(habit.monthlyCompletion || 0).toFixed(0)}%`, sub: "Last 30 days", color: "text-violet-400" },
+              { label: "Total", value: habit.totalCompletions || 0, sub: "completions", color: "text-emerald-400" },
             ].map((s) => (
               <div key={s.label} className="bg-slate-950/50 rounded-xl p-2 text-center border border-slate-800/40">
                 <p className={`text-xs font-bold ${s.color}`}>{s.value}</p>
@@ -275,28 +381,33 @@ function HabitCard({
           <ChevronDown className={`h-3 w-3 transition-transform ${showStats ? "rotate-180" : ""}`} />
         </button>
 
-        <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={onEdit}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-violet-400 hover:bg-violet-950/30 transition-all"
-            aria-label="Edit habit"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 transition-all"
-            aria-label="Delete habit"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
+        {/* Only show Edit/Delete buttons for MY HABITS */}
+        {!isPartner && onEdit && onDelete && (
+          <div className="ml-auto flex items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={onEdit}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-violet-400 hover:bg-violet-950/30 transition-all"
+              aria-label="Edit habit"
+              title="Edit habit"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-all"
+              aria-label="Delete habit"
+              title="Delete habit"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ── Habit Form (create & edit) ────────────────────────────────────
+// ── Habit Form (create single & edit) ────────────────────────────
 function HabitForm({
   initial,
   onSubmit,
@@ -315,11 +426,33 @@ function HabitForm({
   const [color, setColor] = React.useState(initial?.color ?? "#8B5CF6");
   const [frequency, setFrequency] = React.useState<HabitFrequency>(initial?.frequency ?? "DAILY");
   const [timeOfDay, setTimeOfDay] = React.useState<HabitTimeOfDay>(initial?.timeOfDay ?? "ANYTIME");
+  const [startDate, setStartDate] = React.useState(
+    initial?.startDate ?? new Date().toISOString().split("T")[0]
+  );
+  const [endDate, setEndDate] = React.useState(initial?.endDate ?? "");
+  const [error, setError] = React.useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!name.trim()) return;
-    await onSubmit({ name: name.trim(), description, icon, category, color, frequency, timeOfDay });
+
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+      setError("End date cannot be before start date.");
+      return;
+    }
+
+    await onSubmit({
+      name: name.trim(),
+      description: description.trim() || undefined,
+      icon,
+      category,
+      color,
+      frequency,
+      timeOfDay,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    });
   };
 
   const inputCls =
@@ -328,6 +461,12 @@ function HabitForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+          {error}
+        </div>
+      )}
+
       {/* Name */}
       <div>
         <label className={labelCls}>Habit Name *</label>
@@ -349,9 +488,39 @@ function HabitForm({
           onChange={(e) => setDescription(e.target.value)}
           className={`${inputCls} resize-none`}
           rows={2}
-          placeholder="Optional short description..."
+          placeholder="e.g. Exercise for 30 minutes..."
           maxLength={500}
         />
+      </div>
+
+      {/* Dates: Start Date & End Date */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className={labelCls}>
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3 text-violet-400" /> Start Date
+            </span>
+          </label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className={inputCls}
+          />
+        </div>
+        <div>
+          <label className={labelCls}>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-pink-400" /> End Date (Optional)
+            </span>
+          </label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className={inputCls}
+          />
+        </div>
       </div>
 
       {/* Icon picker */}
@@ -445,7 +614,7 @@ function HabitForm({
 
       {/* Footer buttons */}
       <div className="flex gap-2 pt-2">
-        <Button variant="ghost" size="sm" onClick={onClose} className="flex-1" type="button">
+        <Button variant="ghost" size="sm" onClick={onClose} className="flex-1" type="button" disabled={submitting}>
           Cancel
         </Button>
         <Button
@@ -455,57 +624,110 @@ function HabitForm({
           disabled={submitting || !name.trim()}
           leftIcon={submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : undefined}
         >
-          {submitting ? "Saving…" : initial ? "Save Changes" : "Create Habit"}
+          {submitting ? "Saving habit..." : initial ? "Save Changes" : "Create Habit"}
         </Button>
       </div>
     </form>
   );
 }
 
-// ── Main HabitsPage ───────────────────────────────────────────────
+// ── Main HabitsPage Component ─────────────────────────────────────
 export const HabitsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { habits, loading, error, reload, create, update, remove, complete, uncomplete } = useHabits();
+  const { partnerStatus } = usePartner();
+  const {
+    habits,
+    partnerHabits,
+    loading,
+    loadingPartner,
+    error,
+    partnerError,
+    reload,
+    reloadPartner,
+    create,
+    createBulk,
+    update,
+    remove,
+    complete,
+    uncomplete,
+  } = useHabits();
   const { toast } = useToast();
 
+  // Active section tab: "my" | "partner"
+  const [activeTab, setActiveTab] = React.useState<"my" | "partner">("my");
   const [filter, setFilter] = React.useState<HabitFilter>("all");
   const [togglingId, setTogglingId] = React.useState<number | null>(null);
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
 
-  // modal states
-  const [showCreate, setShowCreate] = React.useState(false);
+  // Modals
+  const [showSingleCreate, setShowSingleCreate] = React.useState(false);
+  const [showBulkCreate, setShowBulkCreate] = React.useState(false);
   const [editingHabit, setEditingHabit] = React.useState<HabitResponse | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<HabitResponse | null>(null);
 
-  // ── filter habits ────────────────────────────────────────────────
-  const filtered = React.useMemo(() => {
+  const isConnected = partnerStatus?.status === "CONNECTED";
+  const partner = partnerStatus?.partner;
+  const partnerDisplayName = partner?.nickname?.trim() || partner?.name || "Partner";
+  const userDisplayName = user?.nickname?.trim() || user?.name?.split(" ")[0] || "You";
+
+  // Filtered habits for My Habits
+  const filteredMyHabits = React.useMemo(() => {
     return habits.filter((h) => {
       switch (filter) {
-        case "completed": return h.completedToday;
-        case "pending":   return !h.completedToday;
+        case "completed": return h.completedToday || h.dailyStatus === "COMPLETED";
+        case "pending":   return !h.completedToday && h.dailyStatus === "PENDING";
         case "morning":   return h.timeOfDay === "MORNING";
         case "afternoon": return h.timeOfDay === "AFTERNOON";
         case "evening":   return h.timeOfDay === "EVENING";
-        case "today":     return true; // all active are for today
+        case "today":     return h.dailyStatus !== "EXPIRED" && h.dailyStatus !== "NOT_STARTED";
         default:          return true;
       }
     });
   }, [habits, filter]);
 
-  // ── summary stats ─────────────────────────────────────────────────
-  const totalHabits = habits.length;
-  const doneToday = habits.filter((h) => h.completedToday).length;
-  const todayPct = totalHabits ? Math.round((doneToday / totalHabits) * 100) : 0;
-  const avgStreak = totalHabits
-    ? Math.round(habits.reduce((s, h) => s + h.currentStreak, 0) / totalHabits)
-    : 0;
-  const avgCompletion = totalHabits
-    ? Math.round(habits.reduce((s, h) => s + h.weeklyCompletion, 0) / totalHabits)
+  // Filtered habits for Partner Habits
+  const filteredPartnerHabits = React.useMemo(() => {
+    return partnerHabits.filter((h) => {
+      switch (filter) {
+        case "completed": return h.completedToday || h.dailyStatus === "COMPLETED";
+        case "pending":   return !h.completedToday && h.dailyStatus === "PENDING";
+        case "morning":   return h.timeOfDay === "MORNING";
+        case "afternoon": return h.timeOfDay === "AFTERNOON";
+        case "evening":   return h.timeOfDay === "EVENING";
+        case "today":     return h.dailyStatus !== "EXPIRED" && h.dailyStatus !== "NOT_STARTED";
+        default:          return true;
+      }
+    });
+  }, [partnerHabits, filter]);
+
+  // Active counts for today
+  const activeMyHabitsToday = habits.filter((h) => h.dailyStatus !== "EXPIRED" && h.dailyStatus !== "NOT_STARTED");
+  const doneMyToday = activeMyHabitsToday.filter((h) => h.completedToday || h.dailyStatus === "COMPLETED").length;
+  const totalMyToday = activeMyHabitsToday.length;
+  const myTodayPct = totalMyToday ? Math.round((doneMyToday / totalMyToday) * 100) : 0;
+
+  const activePartnerHabitsToday = partnerHabits.filter((h) => h.dailyStatus !== "EXPIRED" && h.dailyStatus !== "NOT_STARTED");
+  const donePartnerToday = activePartnerHabitsToday.filter((h) => h.completedToday || h.dailyStatus === "COMPLETED").length;
+  const totalPartnerToday = activePartnerHabitsToday.length;
+  const partnerTodayPct = totalPartnerToday ? Math.round((donePartnerToday / totalPartnerToday) * 100) : 0;
+
+  const avgStreak = habits.length
+    ? Math.round(habits.reduce((s, h) => s + (h.currentStreak || 0), 0) / habits.length)
     : 0;
 
-  // ── toggle completion ─────────────────────────────────────────────
+  // Toggle completion for own habit
   async function handleToggle(habit: HabitResponse) {
+    if (habit.dailyStatus === "EXPIRED") {
+      toast({ type: "error", title: "Habit Expired", description: "This habit has ended and cannot be completed." });
+      return;
+    }
+    if (habit.dailyStatus === "NOT_STARTED") {
+      toast({ type: "info", title: "Not Started Yet", description: `This habit starts on ${formatHabitDate(habit.startDate)}.` });
+      return;
+    }
+
     setTogglingId(habit.id);
     try {
       if (habit.completedToday) {
@@ -516,86 +738,122 @@ export const HabitsPage: React.FC = () => {
         toast({
           type: "success",
           title: `Habit complete! ${habit.icon}`,
-          description: `Streak is now ${updated.currentStreak} day${updated.currentStreak !== 1 ? "s" : ""}. +3 XP 🎉`,
+          description: `Streak is now ${updated.currentStreak} day${updated.currentStreak !== 1 ? "s" : ""}. +3 XP earned! 🎉`,
         });
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast({ type: "error", title: "Error", description: msg ?? "Could not update habit." });
+      toast({ type: "error", title: "Error", description: msg ?? "Unable to update completion status." });
     } finally {
       setTogglingId(null);
     }
   }
 
-  // ── create ────────────────────────────────────────────────────────
-  async function handleCreate(data: CreateHabitRequest) {
+  // Create single habit
+  async function handleCreateSingle(data: CreateHabitRequest) {
     setSubmitting(true);
     try {
       const created = await create(data);
-      setShowCreate(false);
+      setShowSingleCreate(false);
       toast({ type: "success", title: "Habit created! ✨", description: `'${created.name}' added to your habits.` });
     } catch {
-      toast({ type: "error", title: "Error", description: "Failed to create habit." });
+      toast({ type: "error", title: "Error", description: "Unable to save habit." });
     } finally {
       setSubmitting(false);
     }
   }
 
-  // ── update ────────────────────────────────────────────────────────
+  // Create multiple habits
+  async function handleCreateBulk(dataList: CreateHabitRequest[]) {
+    setSubmitting(true);
+    try {
+      const created = await createBulk(dataList);
+      setShowBulkCreate(false);
+      toast({
+        type: "success",
+        title: "Habits created! ✨",
+        description: `Successfully added ${created.length} new habit${created.length > 1 ? "s" : ""} to your list.`,
+      });
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast({ type: "error", title: "Error", description: msg ?? "Unable to create habits." });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // Update habit
   async function handleUpdate(data: UpdateHabitRequest) {
     if (!editingHabit) return;
     setSubmitting(true);
     try {
       await update(editingHabit.id, data);
       setEditingHabit(null);
-      toast({ type: "success", title: "Updated!", description: "Habit saved successfully." });
+      toast({ type: "success", title: "Habit updated! ✨", description: "Changes saved successfully." });
     } catch {
-      toast({ type: "error", title: "Error", description: "Failed to update habit." });
+      toast({ type: "error", title: "Error", description: "Unable to save habit." });
     } finally {
       setSubmitting(false);
     }
   }
 
-  // ── delete ────────────────────────────────────────────────────────
+  // Delete habit
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeletingId(deleteTarget.id);
     try {
       await remove(deleteTarget.id);
       setDeleteTarget(null);
-      toast({ type: "info", title: "Deleted", description: `'${deleteTarget.name}' removed.` });
+      toast({ type: "info", title: "Habit Deleted", description: `'${deleteTarget.name}' removed from your active habits.` });
     } catch {
-      toast({ type: "error", title: "Error", description: "Failed to delete habit." });
+      toast({ type: "error", title: "Error", description: "Unable to delete habit." });
     } finally {
       setDeletingId(null);
     }
   }
 
-  // ── render ────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-8">
+    <div className="space-y-6 animate-in fade-in duration-300 pb-12">
 
-      {/* ── Header ──────────────────────────────────────────── */}
+      {/* ── Page Header ──────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Your Habits</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <span>Habits Sanctuary</span>
+          </h1>
           <p className="text-sm text-slate-400 mt-0.5">
-            {(user?.nickname?.trim() || user?.name?.split(" ")[0] || "You")}'s personal habit tracker · {doneToday}/{totalHabits} done today
+            {userDisplayName}'s personal & shared habit rituals · {doneMyToday}/{totalMyToday} completed today
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
-            onClick={reload}
+            onClick={() => {
+              reload();
+              if (isConnected) reloadPartner();
+            }}
             leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
           >
             Refresh
           </Button>
+
+          {/* + Add Habits (Bulk creation) button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowBulkCreate(true)}
+            className="border-violet-500/40 text-violet-300 hover:bg-violet-600/10"
+            leftIcon={<Layers className="h-3.5 w-3.5" />}
+          >
+            + Add Habits
+          </Button>
+
+          {/* + Add Habit single button */}
           <Button
             variant="glow"
             size="sm"
-            onClick={() => setShowCreate(true)}
+            onClick={() => setShowSingleCreate(true)}
             leftIcon={<Plus className="h-4 w-4" />}
           >
             Add Habit
@@ -603,202 +861,331 @@ export const HabitsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Summary StatCards ────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Today's Progress"
-          value={`${todayPct}%`}
-          subtitle={`${doneToday} of ${totalHabits} habits done`}
-          icon={<Check className="h-5 w-5" />}
-          accentColor="violet"
-          progress={todayPct}
-          trend={{ value: doneToday > 0 ? `${doneToday} done` : "None yet", direction: doneToday > 0 ? "up" : "neutral" }}
-        />
-        <StatCard
-          title="Active Habits"
-          value={String(totalHabits)}
-          subtitle={`${filtered.length} matching filter`}
-          icon={<Sparkles className="h-5 w-5" />}
-          accentColor="indigo"
-          progress={(filtered.length / Math.max(totalHabits, 1)) * 100}
-          trend={{ value: "Active", direction: "neutral" }}
-        />
-        <StatCard
-          title="Avg. Streak"
-          value={`${avgStreak}d`}
-          subtitle="Across all habits"
-          icon={<Flame className="h-5 w-5" />}
-          accentColor="amber"
-          progress={Math.min(avgStreak * 5, 100)}
-          trend={{ value: avgStreak > 0 ? `${avgStreak} days` : "Start today!", direction: avgStreak > 3 ? "up" : "neutral" }}
-        />
-        <StatCard
-          title="Weekly Completion"
-          value={`${avgCompletion}%`}
-          subtitle="Last 7 days average"
-          icon={<BarChart2 className="h-5 w-5" />}
-          accentColor="emerald"
-          progress={avgCompletion}
-          glow={avgCompletion >= 80}
-          trend={{ value: avgCompletion >= 80 ? "Excellent!" : avgCompletion >= 50 ? "Good" : "Needs work", direction: avgCompletion >= 60 ? "up" : "neutral" }}
-        />
+      {/* ── TABS: MY HABITS vs PARTNER HABITS ─────────────────────── */}
+      <div className="flex border-b border-slate-800">
+        <button
+          onClick={() => setActiveTab("my")}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all ${
+            activeTab === "my"
+              ? "border-violet-500 text-white shadow-[0_4px_12px_rgba(139,92,246,0.25)]"
+              : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-700"
+          }`}
+        >
+          <User className="h-4 w-4 text-violet-400" />
+          <span>MY HABITS</span>
+          <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-slate-800 text-violet-300 font-mono">
+            {habits.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("partner")}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-all ${
+            activeTab === "partner"
+              ? "border-pink-500 text-white shadow-[0_4px_12px_rgba(236,72,153,0.25)]"
+              : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-700"
+          }`}
+        >
+          <Heart className="h-4 w-4 text-pink-400" />
+          <span>PARTNER HABITS</span>
+          {isConnected && (
+            <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-pink-950/40 border border-pink-500/30 text-pink-300 font-mono">
+              {partnerHabits.length}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* ── Overall progress ring + bar ──────────────────────── */}
-      {totalHabits > 0 && (
-        <Card className="p-5">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-            <ProgressRing
-              value={todayPct}
-              size={90}
-              strokeWidth={7}
-              startColor={todayPct === 100 ? "#10B981" : "#8B5CF6"}
-              endColor={todayPct === 100 ? "#14B8A6" : "#EC4899"}
-            >
-              <div className="flex flex-col items-center">
-                <span className="text-xl font-bold text-white">{todayPct}%</span>
-                <span className="text-[9px] text-slate-500">today</span>
-              </div>
-            </ProgressRing>
-            <div className="flex-1 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-white">Today's Overall Progress</span>
-                <span className="font-mono text-violet-400">{doneToday}/{totalHabits} habits</span>
-              </div>
-              <ProgressBar value={todayPct} variant={todayPct === 100 ? "emerald" : "violet"} glow={todayPct >= 80} size="md" />
-              {todayPct === 100 && (
-                <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Perfect day! All habits completed 🎉
-                </p>
-              )}
-            </div>
-          </div>
-        </Card>
+      {/* ── Overview Summary Cards ─────────────────────────────────── */}
+      {activeTab === "my" ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Today's Progress"
+            value={`${myTodayPct}%`}
+            subtitle={`${doneMyToday} of ${totalMyToday} active done`}
+            icon={<Check className="h-5 w-5" />}
+            accentColor="violet"
+            progress={myTodayPct}
+            trend={{ value: doneMyToday > 0 ? `${doneMyToday} completed` : "Pending", direction: doneMyToday > 0 ? "up" : "neutral" }}
+          />
+          <StatCard
+            title="Total Habits"
+            value={String(habits.length)}
+            subtitle={`${activeMyHabitsToday.length} active today`}
+            icon={<Sparkles className="h-5 w-5" />}
+            accentColor="indigo"
+            progress={100}
+            trend={{ value: "Active", direction: "neutral" }}
+          />
+          <StatCard
+            title="Avg. Streak"
+            value={`${avgStreak}d`}
+            subtitle="Across your habits"
+            icon={<Flame className="h-5 w-5" />}
+            accentColor="amber"
+            progress={Math.min(avgStreak * 10, 100)}
+            trend={{ value: avgStreak > 0 ? `${avgStreak} days` : "Start today!", direction: "up" }}
+          />
+          <StatCard
+            title="Partner Sync"
+            value={isConnected ? `${donePartnerToday}/${totalPartnerToday}` : "Not linked"}
+            subtitle={isConnected ? `${partnerDisplayName}'s habits done` : "Link your partner"}
+            icon={<Users className="h-5 w-5" />}
+            accentColor="pink"
+            progress={partnerTodayPct}
+            trend={{ value: isConnected ? `${partnerTodayPct}% complete` : "Solo", direction: "neutral" }}
+          />
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatCard
+            title={`${partnerDisplayName}'s Today`}
+            value={`${partnerTodayPct}%`}
+            subtitle={`${donePartnerToday} of ${totalPartnerToday} habits done`}
+            icon={<Heart className="h-5 w-5 text-pink-400" />}
+            accentColor="pink"
+            progress={partnerTodayPct}
+            trend={{ value: `${donePartnerToday} done`, direction: donePartnerToday > 0 ? "up" : "neutral" }}
+          />
+          <StatCard
+            title="Partner Habits"
+            value={String(partnerHabits.length)}
+            subtitle="View-only partner routines"
+            icon={<Sparkles className="h-5 w-5" />}
+            accentColor="indigo"
+            progress={100}
+            trend={{ value: "Live Sync", direction: "neutral" }}
+          />
+          <StatCard
+            title="Shared Today"
+            value={`${doneMyToday + donePartnerToday} / ${totalMyToday + totalPartnerToday}`}
+            subtitle="Combined couple completion"
+            icon={<Users className="h-5 w-5 text-violet-400" />}
+            accentColor="violet"
+            progress={
+              totalMyToday + totalPartnerToday > 0
+                ? Math.round(((doneMyToday + donePartnerToday) / (totalMyToday + totalPartnerToday)) * 100)
+                : 0
+            }
+            trend={{ value: "Together", direction: "up" }}
+          />
+        </div>
       )}
 
-      {/* ── Filter Bar ───────────────────────────────────────── */}
+      {/* ── Filter Bar ────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap">
         {FILTERS.map((f) => {
+          const targetList = activeTab === "my" ? habits : partnerHabits;
           const count =
-            f.id === "all" ? habits.length
-            : f.id === "completed" ? habits.filter((h) => h.completedToday).length
-            : f.id === "pending" ? habits.filter((h) => !h.completedToday).length
-            : f.id === "morning" ? habits.filter((h) => h.timeOfDay === "MORNING").length
-            : f.id === "afternoon" ? habits.filter((h) => h.timeOfDay === "AFTERNOON").length
-            : f.id === "evening" ? habits.filter((h) => h.timeOfDay === "EVENING").length
-            : habits.length;
+            f.id === "all" ? targetList.length
+            : f.id === "completed" ? targetList.filter((h) => h.completedToday || h.dailyStatus === "COMPLETED").length
+            : f.id === "pending" ? targetList.filter((h) => !h.completedToday && h.dailyStatus === "PENDING").length
+            : f.id === "morning" ? targetList.filter((h) => h.timeOfDay === "MORNING").length
+            : f.id === "afternoon" ? targetList.filter((h) => h.timeOfDay === "AFTERNOON").length
+            : f.id === "evening" ? targetList.filter((h) => h.timeOfDay === "EVENING").length
+            : targetList.filter((h) => h.dailyStatus !== "EXPIRED" && h.dailyStatus !== "NOT_STARTED").length;
 
           return (
             <button
               key={f.id}
               onClick={() => setFilter(f.id)}
-              className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 ${
                 filter === f.id
-                  ? "bg-violet-600 border-violet-500 text-white shadow-[0_0_12px_rgba(139,92,246,0.35)]"
+                  ? activeTab === "my"
+                    ? "bg-violet-600 border-violet-500 text-white shadow-[0_0_12px_rgba(139,92,246,0.35)]"
+                    : "bg-pink-600 border-pink-500 text-white shadow-[0_0_12px_rgba(236,72,153,0.35)]"
                   : "border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-300"
               }`}
             >
               {f.label}
-              <span
-                className={`text-[10px] font-mono ${filter === f.id ? "text-violet-200" : "text-slate-600"}`}
-              >
-                {count}
-              </span>
+              <span className="text-[10px] font-mono opacity-80">{count}</span>
             </button>
           );
         })}
       </div>
 
-      {/* ── Habit Grid ───────────────────────────────────────── */}
-      {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i} className="p-5 space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-slate-800/60 animate-pulse" />
-                  <div className="space-y-1.5">
-                    <div className="h-4 w-32 rounded-md bg-slate-800/60 animate-pulse" />
-                    <div className="h-3 w-20 rounded-md bg-slate-800/40 animate-pulse" />
+      {/* ── TAB CONTENT: MY HABITS ─────────────────────────────────── */}
+      {activeTab === "my" && (
+        <>
+          {loading ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="p-5 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-slate-800 animate-pulse" />
+                      <div className="space-y-1.5">
+                        <div className="h-4 w-32 rounded bg-slate-800 animate-pulse" />
+                        <div className="h-3 w-20 rounded bg-slate-800/60 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="h-8 w-8 rounded-full bg-slate-800 animate-pulse" />
                   </div>
-                </div>
-                <div className="h-8 w-8 rounded-full bg-slate-800/50 animate-pulse" />
-              </div>
-              <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between">
-                <div className="h-3.5 w-24 rounded-md bg-slate-800/40 animate-pulse" />
-                <div className="h-3.5 w-16 rounded-md bg-slate-800/40 animate-pulse" />
-              </div>
+                </Card>
+              ))}
+            </div>
+          ) : error ? (
+            <Card className="p-8 text-center border-rose-500/20">
+              <AlertCircle className="h-8 w-8 text-rose-400 mx-auto mb-3" />
+              <p className="text-sm text-rose-300 mb-3">{error || "Unable to load habits."}</p>
+              <Button variant="outline" size="sm" onClick={reload} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
+                Try Again
+              </Button>
             </Card>
-          ))}
-        </div>
-      ) : error ? (
-        <Card className="p-8 text-center border-rose-500/20">
-          <AlertCircle className="h-8 w-8 text-rose-400 mx-auto mb-3" />
-          <p className="text-sm text-rose-300 mb-3">{error}</p>
-          <Button variant="outline" size="sm" onClick={reload} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
-            Try Again
-          </Button>
-        </Card>
-      ) : filtered.length === 0 ? (
-        <Card className="p-12 text-center">
-          {totalHabits === 0 ? (
-            <>
-              <div className="text-5xl mb-4">⭐</div>
-              <h3 className="text-lg font-bold text-white mb-2">No habits yet</h3>
-              <p className="text-sm text-slate-400 mb-5 max-w-sm mx-auto">
-                Start building your routines. Add your first habit and begin tracking your progress.
-              </p>
-              <Button variant="glow" onClick={() => setShowCreate(true)} leftIcon={<Plus className="h-4 w-4" />}>
-                Create Your First Habit
-              </Button>
-            </>
+          ) : filteredMyHabits.length === 0 ? (
+            <Card className="p-12 text-center">
+              {habits.length === 0 ? (
+                <>
+                  <div className="text-5xl mb-4">⭐</div>
+                  <h3 className="text-lg font-bold text-white mb-2">No habits yet</h3>
+                  <p className="text-sm text-slate-400 mb-5 max-w-sm mx-auto">
+                    Create your first habit and start growing together.
+                  </p>
+                  <div className="flex items-center justify-center gap-3">
+                    <Button variant="glow" onClick={() => setShowSingleCreate(true)} leftIcon={<Plus className="h-4 w-4" />}>
+                      Create Habit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowBulkCreate(true)}
+                      className="border-violet-500/30 text-violet-300"
+                      leftIcon={<Layers className="h-4 w-4" />}
+                    >
+                      + Add Multiple Habits
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-4xl mb-3">🔍</div>
+                  <h3 className="text-base font-bold text-white mb-1.5">No habits match this filter</h3>
+                  <p className="text-sm text-slate-400 mb-4">Try another filter or add a new routine.</p>
+                  <Button variant="outline" size="sm" onClick={() => setFilter("all")}>
+                    Show All
+                  </Button>
+                </>
+              )}
+            </Card>
           ) : (
-            <>
-              <div className="text-4xl mb-3">🔍</div>
-              <h3 className="text-base font-bold text-white mb-1.5">No habits match this filter</h3>
-              <p className="text-sm text-slate-400 mb-4">Try a different filter or add a new habit.</p>
-              <Button variant="outline" size="sm" onClick={() => setFilter("all")}>
-                Show All
-              </Button>
-            </>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredMyHabits.map((habit) => (
+                <HabitCard
+                  key={habit.id}
+                  habit={habit}
+                  isPartner={false}
+                  toggling={togglingId === habit.id}
+                  onToggle={() => handleToggle(habit)}
+                  onEdit={() => setEditingHabit(habit)}
+                  onDelete={() => setDeleteTarget(habit)}
+                />
+              ))}
+            </div>
           )}
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((habit) => (
-            <HabitCard
-              key={habit.id}
-              habit={habit}
-              toggling={togglingId === habit.id}
-              onToggle={() => handleToggle(habit)}
-              onEdit={() => setEditingHabit(habit)}
-              onDelete={() => setDeleteTarget(habit)}
-            />
-          ))}
-        </div>
+        </>
       )}
 
-      {/* ── Create Modal ─────────────────────────────────────── */}
+      {/* ── TAB CONTENT: PARTNER HABITS (VIEW-ONLY) ────────────────── */}
+      {activeTab === "partner" && (
+        <>
+          {!isConnected ? (
+            <Card className="p-10 text-center border-dashed border-pink-500/30 bg-pink-950/10">
+              <Heart className="h-10 w-10 text-pink-400 mx-auto mb-3 animate-pulse" />
+              <h3 className="text-base font-bold text-white mb-1.5">Partner Not Connected</h3>
+              <p className="text-sm text-slate-400 max-w-md mx-auto mb-5">
+                Connect with your partner to see their habits and track your mutual progress together.
+              </p>
+              <Button
+                variant="glow"
+                size="sm"
+                className="bg-gradient-to-r from-pink-600 to-rose-600 text-white"
+                onClick={() => navigate(ROUTES.PARTNER)}
+              >
+                Go to Partner Space
+              </Button>
+            </Card>
+          ) : loadingPartner ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {[1, 2].map((i) => (
+                <Card key={i} className="p-5 space-y-4">
+                  <div className="h-8 w-32 rounded bg-slate-800 animate-pulse" />
+                  <div className="h-4 w-48 rounded bg-slate-800/60 animate-pulse" />
+                </Card>
+              ))}
+            </div>
+          ) : partnerError ? (
+            <Card className="p-8 text-center border-rose-500/20">
+              <AlertCircle className="h-8 w-8 text-rose-400 mx-auto mb-3" />
+              <p className="text-sm text-rose-300 mb-3">{partnerError}</p>
+              <Button variant="outline" size="sm" onClick={reloadPartner} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
+                Try Again
+              </Button>
+            </Card>
+          ) : filteredPartnerHabits.length === 0 ? (
+            <Card className="p-10 text-center">
+              {partnerHabits.length === 0 ? (
+                <>
+                  <div className="text-4xl mb-3">🌱</div>
+                  <h3 className="text-base font-bold text-white mb-1.5">
+                    Your partner hasn't added any habits yet.
+                  </h3>
+                  <p className="text-sm text-slate-400 max-w-sm mx-auto">
+                    When {partnerDisplayName} creates and tracks their daily rituals, they will appear here in real-time.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="text-4xl mb-3">🔍</div>
+                  <h3 className="text-base font-bold text-white mb-1.5">No partner habits match this filter</h3>
+                  <p className="text-sm text-slate-400 mb-4">Try clearing the filter to see all partner habits.</p>
+                  <Button variant="outline" size="sm" onClick={() => setFilter("all")}>
+                    Show All
+                  </Button>
+                </>
+              )}
+            </Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredPartnerHabits.map((habit) => (
+                <HabitCard
+                  key={habit.id}
+                  habit={habit}
+                  isPartner={true}
+                  partnerDisplayName={partnerDisplayName}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Single Create Modal ───────────────────────────────────── */}
       <Modal
-        isOpen={showCreate}
-        onClose={() => setShowCreate(false)}
-        title="Create New Habit"
+        isOpen={showSingleCreate}
+        onClose={() => setShowSingleCreate(false)}
+        title="Create Habit"
         description="Build a new routine to track consistently."
       >
         <HabitForm
-          onSubmit={handleCreate}
-          onClose={() => setShowCreate(false)}
+          onSubmit={handleCreateSingle}
+          onClose={() => setShowSingleCreate(false)}
           submitting={submitting}
         />
       </Modal>
 
-      {/* ── Edit Modal ───────────────────────────────────────── */}
+      {/* ── Bulk Create Modal (+ Add Habits) ───────────────────────── */}
+      <BulkCreateHabitsModal
+        isOpen={showBulkCreate}
+        onClose={() => setShowBulkCreate(false)}
+        onSubmit={handleCreateBulk}
+        submitting={submitting}
+      />
+
+      {/* ── Edit Modal ────────────────────────────────────────────── */}
       <Modal
-        isOpen={!!editingHabit}
+        isOpen={Boolean(editingHabit)}
         onClose={() => setEditingHabit(null)}
         title="Edit Habit"
-        description="Update the details for this habit."
+        description="Update your habit details. Ownership cannot be changed."
       >
         {editingHabit && (
           <HabitForm
@@ -810,40 +1197,43 @@ export const HabitsPage: React.FC = () => {
         )}
       </Modal>
 
-      {/* ── Delete Confirm Modal ─────────────────────────────── */}
+      {/* ── Delete Confirmation Modal ─────────────────────────────── */}
       <Modal
-        isOpen={!!deleteTarget}
+        isOpen={Boolean(deleteTarget)}
         onClose={() => setDeleteTarget(null)}
-        title="Delete Habit"
-        description={`Are you sure you want to delete '${deleteTarget?.name}'? This will archive the habit and all its completion history.`}
+        title="Delete Habit?"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? This will remove the habit from your active habit list.`}
         footer={
           <>
-            <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(null)}>
+            <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(null)} disabled={deletingId !== null}>
               Cancel
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="border-rose-500/50 text-rose-400 hover:bg-rose-950/30"
+              className="border-rose-500/50 text-rose-400 hover:bg-rose-950/40"
               onClick={handleDelete}
               disabled={deletingId !== null}
               leftIcon={deletingId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
             >
-              {deletingId ? "Deleting…" : "Delete Habit"}
+              {deletingId ? "Deleting habit..." : "Delete Habit"}
             </Button>
           </>
         }
       >
         {deleteTarget && (
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+          <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
             <span className="text-2xl">{deleteTarget.icon}</span>
             <div>
               <p className="text-sm font-semibold text-white">{deleteTarget.name}</p>
-              <p className="text-xs text-slate-400">{deleteTarget.totalCompletions} total completions · {deleteTarget.currentStreak}d streak</p>
+              <p className="text-xs text-slate-400">
+                {deleteTarget.totalCompletions || 0} total completions · {deleteTarget.currentStreak || 0}d streak
+              </p>
             </div>
           </div>
         )}
       </Modal>
+
     </div>
   );
 };

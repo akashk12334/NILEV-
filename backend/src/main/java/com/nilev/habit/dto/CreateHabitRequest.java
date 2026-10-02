@@ -5,6 +5,8 @@ import com.nilev.habit.entity.HabitTimeOfDay;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
+
 public class CreateHabitRequest {
 
     @NotBlank(message = "Habit name is required")
@@ -26,6 +28,9 @@ public class CreateHabitRequest {
     private HabitFrequency frequency = HabitFrequency.DAILY;
     private HabitTimeOfDay timeOfDay = HabitTimeOfDay.ANYTIME;
 
+    private LocalDate startDate;
+    private LocalDate endDate;
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
@@ -46,4 +51,10 @@ public class CreateHabitRequest {
 
     public HabitTimeOfDay getTimeOfDay() { return timeOfDay; }
     public void setTimeOfDay(HabitTimeOfDay timeOfDay) { this.timeOfDay = timeOfDay; }
+
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
 }

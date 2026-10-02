@@ -1,7 +1,8 @@
 // Habit types for the NILEV frontend
 
-export type HabitFrequency = "DAILY" | "WEEKDAYS" | "WEEKENDS" | "WEEKLY" | "MONTHLY";
+export type HabitFrequency = "DAILY" | "WEEKDAYS" | "WEEKENDS" | "WEEKLY" | "MONTHLY" | "CUSTOM";
 export type HabitTimeOfDay = "MORNING" | "AFTERNOON" | "EVENING" | "ANYTIME";
+export type HabitDailyStatus = "PENDING" | "COMPLETED" | "MISSED" | "EXPIRED" | "NOT_STARTED";
 
 export interface HabitResponse {
   id: number;
@@ -13,6 +14,12 @@ export interface HabitResponse {
   color: string;
   frequency: HabitFrequency;
   timeOfDay: HabitTimeOfDay;
+  startDate?: string | null;
+  endDate?: string | null;
+  dailyStatus?: HabitDailyStatus;
+  partnerNickname?: string | null;
+  ownerName?: string | null;
+  readOnly?: boolean;
   active: boolean;
   completedToday: boolean;
   currentStreak: number;
@@ -33,6 +40,8 @@ export interface CreateHabitRequest {
   color?: string;
   frequency?: HabitFrequency;
   timeOfDay?: HabitTimeOfDay;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface UpdateHabitRequest {
@@ -43,6 +52,8 @@ export interface UpdateHabitRequest {
   color?: string;
   frequency?: HabitFrequency;
   timeOfDay?: HabitTimeOfDay;
+  startDate?: string;
+  endDate?: string;
   active?: boolean;
 }
 
@@ -52,6 +63,23 @@ export interface HabitCompletionResponse {
   userId: number;
   completedDate: string;
   createdAt: string;
+}
+
+export interface TodayHabitSummaryResponse {
+  partnerConnected: boolean;
+  partnerName?: string | null;
+  partnerNickname?: string | null;
+  userCompletedCount: number;
+  userTotalCount: number;
+  userPercentage: number;
+  partnerCompletedCount: number;
+  partnerTotalCount: number;
+  partnerPercentage: number;
+  sharedCompletedCount: number;
+  sharedTotalCount: number;
+  sharedPercentage: number;
+  userHabits: HabitResponse[];
+  partnerHabits: HabitResponse[];
 }
 
 export type HabitFilter =

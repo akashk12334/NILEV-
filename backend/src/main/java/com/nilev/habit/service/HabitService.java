@@ -8,7 +8,13 @@ public interface HabitService {
 
     HabitResponse createHabit(Long userId, CreateHabitRequest request);
 
+    List<HabitResponse> createHabitsBulk(Long userId, List<CreateHabitRequest> requests);
+
     List<HabitResponse> getHabits(Long userId);
+
+    List<HabitResponse> getPartnerHabits(Long currentUserId);
+
+    TodayHabitSummaryResponse getTodaySummary(Long currentUserId);
 
     HabitResponse getHabit(Long userId, Long habitId);
 

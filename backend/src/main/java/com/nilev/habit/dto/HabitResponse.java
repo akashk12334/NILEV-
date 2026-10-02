@@ -4,6 +4,7 @@ import com.nilev.habit.entity.HabitFrequency;
 import com.nilev.habit.entity.HabitTimeOfDay;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 /**
  * Full habit response including runtime stats (streak, completion %).
@@ -19,7 +20,15 @@ public class HabitResponse {
     private String color;
     private HabitFrequency frequency;
     private HabitTimeOfDay timeOfDay;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private boolean active;
+
+    // ── status and partner view ──
+    private String dailyStatus; // PENDING, COMPLETED, MISSED, EXPIRED, NOT_STARTED
+    private String partnerNickname;
+    private String ownerName;
+    private boolean readOnly = false;
 
     // ── runtime stats ──
     private boolean completedToday;
@@ -62,8 +71,26 @@ public class HabitResponse {
     public HabitTimeOfDay getTimeOfDay() { return timeOfDay; }
     public void setTimeOfDay(HabitTimeOfDay timeOfDay) { this.timeOfDay = timeOfDay; }
 
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
+
+    public String getDailyStatus() { return dailyStatus; }
+    public void setDailyStatus(String dailyStatus) { this.dailyStatus = dailyStatus; }
+
+    public String getPartnerNickname() { return partnerNickname; }
+    public void setPartnerNickname(String partnerNickname) { this.partnerNickname = partnerNickname; }
+
+    public String getOwnerName() { return ownerName; }
+    public void setOwnerName(String ownerName) { this.ownerName = ownerName; }
+
+    public boolean isReadOnly() { return readOnly; }
+    public void setReadOnly(boolean readOnly) { this.readOnly = readOnly; }
 
     public boolean isCompletedToday() { return completedToday; }
     public void setCompletedToday(boolean completedToday) { this.completedToday = completedToday; }

@@ -22,6 +22,9 @@ export const ENDPOINTS = {
   },
   HABITS: {
     BASE: "/habits",
+    BULK: "/habits/bulk",
+    PARTNER: "/habits/partner",
+    TODAY: "/habits/today",
     BY_ID: (id: number | string) => `/habits/${id}`,
     COMPLETE: (id: number | string) => `/habits/${id}/complete`,
     HISTORY: (id: number | string) => `/habits/${id}/history`,

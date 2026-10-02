@@ -40,11 +40,36 @@ public class HabitController {
         );
     }
 
+    @PostMapping("/bulk")
+    public ResponseEntity<ApiResponse<List<HabitResponse>>> createBulk(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody List<CreateHabitRequest> requests) {
+        List<HabitResponse> responses = habitService.createHabitsBulk(principal.getId(), requests);
+        return new ResponseEntity<>(
+                ApiResponse.success("Habits created successfully", responses),
+                HttpStatus.CREATED
+        );
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<HabitResponse>>> list(
             @AuthenticationPrincipal UserPrincipal principal) {
         List<HabitResponse> habits = habitService.getHabits(principal.getId());
         return ResponseEntity.ok(ApiResponse.success("Habits retrieved", habits));
+    }
+
+    @GetMapping("/partner")
+    public ResponseEntity<ApiResponse<List<HabitResponse>>> getPartnerHabits(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<HabitResponse> habits = habitService.getPartnerHabits(principal.getId());
+        return ResponseEntity.ok(ApiResponse.success("Partner habits retrieved", habits));
+    }
+
+    @GetMapping("/today")
+    public ResponseEntity<ApiResponse<TodayHabitSummaryResponse>> getTodaySummary(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        TodayHabitSummaryResponse summary = habitService.getTodaySummary(principal.getId());
+        return ResponseEntity.ok(ApiResponse.success("Today's habit summary retrieved", summary));
     }
 
     @GetMapping("/{id}")

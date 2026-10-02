@@ -25,7 +25,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.nilev.partner.entity.PartnerConnection;
+
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -266,5 +270,135 @@ class HabitControllerTest extends com.nilev.BaseIntegrationTest {
                         .header("Authorization", "Bearer " + tokenC))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.errorCode", is("ACCESS_DENIED")));
+    }
+
+    // ── BULK CREATION TESTS ──────────────────────────────────────────
+
+    @Test
+    @DisplayName("POST /api/habits/bulk - Creates multiple habits in a single operation")
+    void testCreateHabitsBulk() throws Exception {
+        CreateHabitRequest h1 = new CreateHabitRequest();
+        h1.setName("Morning Workout");
+        h1.setDescription("30 mins cardio");
+        h1.setFrequency(HabitFrequency.DAILY);
+        h1.setStartDate(LocalDate.now());
+
+        CreateHabitRequest h2 = new CreateHabitRequest();
+        h2.setName("Read 20 Pages");
+        h2.setDescription("Self improvement");
+        h2.setFrequency(HabitFrequency.DAILY);
+        h2.setStartDate(LocalDate.now());
+
+        mockMvc.perform(post("/api/habits/bulk")
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(h1, h2))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data", hasSize(2)))
+                .andExpect(jsonPath("$.data[0].name", is("Morning Workout")))
+                .andExpect(jsonPath("$.data[1].name", is("Read 20 Pages")));
+    }
+
+    // ── PARTNER VISIBILITY & VIEW-ONLY ACCESS TESTS ──────────────────
+
+    @Test
+    @DisplayName("GET /api/habits/partner - Partner can VIEW but CANNOT edit, delete, or complete")
+    void testPartnerHabitsVisibilityAndViewOnly() throws Exception {
+        // Connect userA and userB as partners
+        partnerConnectionRepo.save(new PartnerConnection(userA, userB, Instant.now(), true, 5));
+
+        // User B (Maya) creates a habit
+        Habit mayaHabit = habitRepo.save(Habit.builder()
+                .user(userB)
+                .name("Maya Morning Yoga")
+                .description("Stretch and breathwork")
+                .startDate(LocalDate.now())
+                .build());
+
+        // User A (Alex) views partner's habits -> should succeed and show readOnly
+        mockMvc.perform(get("/api/habits/partner")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data", hasSize(1)))
+                .andExpect(jsonPath("$.data[0].name", is("Maya Morning Yoga")))
+                .andExpect(jsonPath("$.data[0].readOnly", is(true)))
+                .andExpect(jsonPath("$.data[0].partnerNickname", is("Maya")));
+
+        // User A CANNOT edit User B's habit -> 403 Forbidden
+        UpdateHabitRequest editReq = new UpdateHabitRequest();
+        editReq.setName("Hacked Yoga");
+        mockMvc.perform(put("/api/habits/" + mayaHabit.getId())
+                        .header("Authorization", "Bearer " + tokenA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(editReq)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode", is("ACCESS_DENIED")));
+
+        // User A CANNOT delete User B's habit -> 403 Forbidden
+        mockMvc.perform(delete("/api/habits/" + mayaHabit.getId())
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode", is("ACCESS_DENIED")));
+
+        // User A CANNOT complete User B's habit -> 403 Forbidden
+        mockMvc.perform(post("/api/habits/" + mayaHabit.getId() + "/complete")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode", is("ACCESS_DENIED")));
+    }
+
+    // ── TODAY SUMMARY TEST ───────────────────────────────────────────
+
+    @Test
+    @DisplayName("GET /api/habits/today - Returns user today + partner today summary")
+    void testGetTodaySummary() throws Exception {
+        partnerConnectionRepo.save(new PartnerConnection(userA, userB, Instant.now(), true, 3));
+
+        habitRepo.save(Habit.builder().user(userA).name("Alex Habit").startDate(LocalDate.now()).build());
+        habitRepo.save(Habit.builder().user(userB).name("Maya Habit").startDate(LocalDate.now()).build());
+
+        mockMvc.perform(get("/api/habits/today")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.partnerConnected", is(true)))
+                .andExpect(jsonPath("$.data.userTotalCount", is(1)))
+                .andExpect(jsonPath("$.data.partnerTotalCount", is(1)))
+                .andExpect(jsonPath("$.data.sharedTotalCount", is(2)));
+    }
+
+    // ── START / END DATE & EXPIRATION TESTS ──────────────────────────
+
+    @Test
+    @DisplayName("POST /api/habits/{id}/complete - Expired habit cannot be completed -> 400")
+    void testExpiredHabitCannotBeCompleted() throws Exception {
+        Habit expiredHabit = habitRepo.save(Habit.builder()
+                .user(userA)
+                .name("Old Challenge")
+                .startDate(LocalDate.now().minusDays(10))
+                .endDate(LocalDate.now().minusDays(1))
+                .build());
+
+        mockMvc.perform(post("/api/habits/" + expiredHabit.getId() + "/complete")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode", is("HABIT_EXPIRED")));
+    }
+
+    @Test
+    @DisplayName("POST /api/habits/{id}/complete - Future unstarted habit cannot be completed -> 400")
+    void testNotStartedHabitCannotBeCompleted() throws Exception {
+        Habit futureHabit = habitRepo.save(Habit.builder()
+                .user(userA)
+                .name("Future Habit")
+                .startDate(LocalDate.now().plusDays(5))
+                .build());
+
+        mockMvc.perform(post("/api/habits/" + futureHabit.getId() + "/complete")
+                        .header("Authorization", "Bearer " + tokenA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode", is("HABIT_NOT_STARTED")));
     }
 }

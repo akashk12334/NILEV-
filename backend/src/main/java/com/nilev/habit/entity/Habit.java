@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
+
 /**
  * A tracked habit belonging to a single user.
  */
@@ -46,6 +48,12 @@ public class Habit extends BaseEntity {
     @Column(name = "time_of_day", nullable = false, length = 20)
     private HabitTimeOfDay timeOfDay = HabitTimeOfDay.ANYTIME;
 
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
@@ -81,6 +89,12 @@ public class Habit extends BaseEntity {
     public HabitTimeOfDay getTimeOfDay() { return timeOfDay; }
     public void setTimeOfDay(HabitTimeOfDay timeOfDay) { this.timeOfDay = timeOfDay; }
 
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
 
@@ -100,6 +114,8 @@ public class Habit extends BaseEntity {
         private String color = "#8B5CF6";
         private HabitFrequency frequency = HabitFrequency.DAILY;
         private HabitTimeOfDay timeOfDay = HabitTimeOfDay.ANYTIME;
+        private LocalDate startDate;
+        private LocalDate endDate;
         private int longestStreak = 0;
 
         public Builder user(User user) { this.user = user; return this; }
@@ -110,6 +126,8 @@ public class Habit extends BaseEntity {
         public Builder color(String color) { this.color = color; return this; }
         public Builder frequency(HabitFrequency frequency) { this.frequency = frequency; return this; }
         public Builder timeOfDay(HabitTimeOfDay timeOfDay) { this.timeOfDay = timeOfDay; return this; }
+        public Builder startDate(LocalDate startDate) { this.startDate = startDate; return this; }
+        public Builder endDate(LocalDate endDate) { this.endDate = endDate; return this; }
         public Builder longestStreak(int longestStreak) { this.longestStreak = longestStreak; return this; }
 
         public Habit build() {
@@ -122,6 +140,8 @@ public class Habit extends BaseEntity {
             h.color = color;
             h.frequency = frequency;
             h.timeOfDay = timeOfDay;
+            h.startDate = startDate;
+            h.endDate = endDate;
             h.longestStreak = longestStreak;
             return h;
         }

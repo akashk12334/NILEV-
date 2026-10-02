@@ -97,7 +97,7 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { partnerStatus, activities } = usePartner();
-  const { habits, complete, uncomplete } = useHabits();
+  const { habits, partnerHabits, todaySummary, complete, uncomplete } = useHabits();
   const { toast } = useToast();
 
   const [goals, setGoals] = React.useState<GoalResponse[]>([]);
@@ -176,9 +176,22 @@ export const DashboardPage: React.FC = () => {
   }, [isConnected]);
 
   // Derived habit calculations from REAL habits
-  const completedToday = habits.filter((h) => h.completedToday).length;
-  const totalHabits = habits.length;
-  const todayPct = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
+  const activeUserHabits = habits.filter((h) => h.dailyStatus !== "EXPIRED" && h.dailyStatus !== "NOT_STARTED");
+  const userDoneCount = todaySummary ? todaySummary.userCompletedCount : activeUserHabits.filter((h) => h.completedToday || h.dailyStatus === "COMPLETED").length;
+  const userTotalCount = todaySummary ? todaySummary.userTotalCount : activeUserHabits.length;
+  const todayPct = userTotalCount > 0 ? Math.round((userDoneCount / userTotalCount) * 100) : 0;
+
+  const activePartnerHabits = partnerHabits.filter((h) => h.dailyStatus !== "EXPIRED" && h.dailyStatus !== "NOT_STARTED");
+  const partnerDoneCount = todaySummary ? todaySummary.partnerCompletedCount : activePartnerHabits.filter((h) => h.completedToday || h.dailyStatus === "COMPLETED").length;
+  const partnerTotalCount = todaySummary ? todaySummary.partnerTotalCount : activePartnerHabits.length;
+  const partnerTodayPct = partnerTotalCount > 0 ? Math.round((partnerDoneCount / partnerTotalCount) * 100) : 0;
+
+  const sharedDoneCount = userDoneCount + (isConnected ? partnerDoneCount : 0);
+  const sharedTotalCount = userTotalCount + (isConnected ? partnerTotalCount : 0);
+  const sharedPct = sharedTotalCount > 0 ? Math.round((sharedDoneCount / sharedTotalCount) * 100) : 0;
+
+  const completedToday = userDoneCount;
+  const totalHabits = userTotalCount;
   const currentStreak = habits.length > 0 ? Math.max(...habits.map((h) => h.currentStreak || 0), 0) : 0;
   const totalXp = myCompanion?.xp || (completedToday * 15);
   const goalsCompleted = goals.filter((g) => g.status === "COMPLETED").length;
@@ -404,6 +417,61 @@ export const DashboardPage: React.FC = () => {
             </Button>
           }
         />
+
+        {/* ── SHARED PROGRESS SUMMARY STRIP (Requirement 15) ───────── */}
+        <div className="grid gap-3 sm:grid-cols-3 mb-4">
+          {/* YOUR PROGRESS */}
+          <Card className="p-4 border-violet-500/25 bg-slate-900/60">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                YOUR PROGRESS
+              </span>
+              <Badge variant="violet" size="sm">You</Badge>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl sm:text-2xl font-bold text-white font-mono">{userDoneCount} / {userTotalCount}</span>
+              <span className="text-xs text-violet-400 font-medium">Completed Today</span>
+            </div>
+            <ProgressBar value={todayPct} variant="violet" size="sm" className="mt-2.5" />
+          </Card>
+
+          {/* PARTNER PROGRESS */}
+          <Card className="p-4 border-pink-500/25 bg-slate-900/60">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                PARTNER PROGRESS
+              </span>
+              <Badge variant="rose" size="sm">{partnerName}</Badge>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl sm:text-2xl font-bold text-white font-mono">
+                {isConnected ? `${partnerDoneCount} / ${partnerTotalCount}` : "– / –"}
+              </span>
+              <span className="text-xs text-pink-400 font-medium">
+                {isConnected ? "Completed Today" : "Not Linked"}
+              </span>
+            </div>
+            <ProgressBar value={isConnected ? partnerTodayPct : 0} variant="rose" size="sm" className="mt-2.5" />
+          </Card>
+
+          {/* SHARED PROGRESS */}
+          <Card className="p-4 border-amber-500/25 bg-slate-900/60">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                SHARED PROGRESS
+              </span>
+              <Badge variant="amber" size="sm">Together</Badge>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl sm:text-2xl font-bold text-white font-mono">
+                {sharedDoneCount} / {sharedTotalCount}
+              </span>
+              <span className="text-xs text-amber-400 font-medium">Combined Today</span>
+            </div>
+            <ProgressBar value={sharedPct} variant="amber" size="sm" className="mt-2.5" />
+          </Card>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           {/* YOUR PROGRESS */}
           <Card className="p-5 border-violet-500/20">
@@ -695,13 +763,13 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── HABITS & PARTNER ACTIVITY (2-col on desktop) ─────── */}
+      {/* ── HABITS & PARTNER TODAY (Requirement 4) ──────────── */}
       <div className="grid gap-6 lg:grid-cols-5">
-        {/* TODAY'S HABITS */}
+        {/* YOUR TODAY / TODAY'S HABITS */}
         <div className="lg:col-span-3">
           <SectionHeader
-            title="Today's Habits"
-            subtitle={`${completedToday} of ${totalHabits} complete`}
+            title="Your Today"
+            subtitle={`${completedToday} / ${totalHabits} habits completed`}
             action={
               <Button
                 variant="glow"
@@ -723,11 +791,11 @@ export const DashboardPage: React.FC = () => {
               <ProgressBar value={todayPct} variant="violet" glow size="sm" />
             </div>
 
-            {totalHabits > 0 ? (
+            {habits.length > 0 ? (
               <div className="space-y-2">
                 {habits.map((h) => {
                   const catColor = CATEGORY_COLORS[h.category] || "violet";
-                  const checked = h.completedToday;
+                  const checked = h.completedToday || h.dailyStatus === "COMPLETED";
 
                   return (
                     <div
@@ -741,11 +809,12 @@ export const DashboardPage: React.FC = () => {
                       <button
                         onClick={() => handleToggleHabit(h.id, h.name, checked)}
                         aria-label={`Toggle ${h.name}`}
+                        disabled={h.dailyStatus === "EXPIRED" || h.dailyStatus === "NOT_STARTED"}
                         className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${
                           checked
                             ? "bg-gradient-to-tr from-violet-600 to-indigo-600 border-violet-400 text-white shadow-[0_0_10px_rgba(139,92,246,0.45)]"
                             : "border-slate-700 bg-slate-900/60 hover:border-violet-500"
-                        }`}
+                        } ${h.dailyStatus === "EXPIRED" || h.dailyStatus === "NOT_STARTED" ? "opacity-40 cursor-not-allowed" : ""}`}
                       >
                         <Check className={`h-3.5 w-3.5 stroke-[3] ${checked ? "text-white" : "text-transparent"}`} />
                       </button>
@@ -796,53 +865,139 @@ export const DashboardPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* PARTNER ACTIVITY */}
-        <div className="lg:col-span-2">
-          <SectionHeader
-            title="Partner Activity"
-            subtitle={isConnected ? `What ${partnerName} did recently` : "Partner activity feed"}
-          />
-          <Card className="p-5 h-full flex flex-col justify-between">
-            {isConnected && activities.length > 0 ? (
-              <div className="space-y-3">
-                {activities.slice(0, 5).map((item) => (
-                  <div key={item.id} className="flex gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 border border-slate-700 text-sm">
-                      {item.icon || "✨"}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-slate-300 leading-relaxed">{item.title}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">
-                        {new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+        {/* PARTNER TODAY & PARTNER ACTIVITY (Right Column) */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* PARTNER TODAY CARD (Requirement 4) */}
+          <div>
+            <SectionHeader
+              title="Partner Today"
+              subtitle={isConnected ? `What ${partnerName} is tracking today` : "Partner habit tracking"}
+            />
+            <Card className="p-5 border-pink-500/25 bg-gradient-to-br from-slate-900/90 via-slate-900/95 to-pink-950/20 shadow-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Heart className="h-4 w-4 fill-pink-400 text-pink-400" />
+                  <h3 className="text-sm font-bold text-white">
+                    {partnerName}'s Today
+                  </h3>
+                </div>
+                <span className="text-xs font-mono font-bold text-pink-300">
+                  {partnerDoneCount} / {partnerTotalCount} completed
+                </span>
               </div>
-            ) : (
-              <div className="py-10 text-center border border-dashed border-slate-800 rounded-xl">
-                <Heart className="h-8 w-8 text-slate-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-300">
-                  {isConnected ? "No partner activity yet today" : "No partner connected"}
-                </p>
-                <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                  {isConnected
-                    ? `When ${partnerName} completes habits or goals, their progress appears here!`
-                    : "Connect with your partner in Partner Space to unlock your shared live timeline."}
-                </p>
-              </div>
-            )}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full mt-4"
-              rightIcon={<ChevronRight className="h-3.5 w-3.5" />}
-              onClick={() => navigate(ROUTES.PARTNER)}
-            >
-              {isConnected ? "View Partner Space" : "Connect in Partner Space"}
-            </Button>
-          </Card>
+              {/* Progress bar */}
+              <div className="mb-4">
+                <ProgressBar
+                  value={isConnected ? partnerTodayPct : 0}
+                  variant="rose"
+                  glow={partnerTodayPct >= 80}
+                  size="sm"
+                />
+              </div>
+
+              {/* Habit list with ✓ and ○ */}
+              {isConnected ? (
+                partnerHabits.length > 0 ? (
+                  <div className="space-y-2 mb-4">
+                    {partnerHabits.slice(0, 6).map((ph) => {
+                      const isDone = ph.completedToday || ph.dailyStatus === "COMPLETED";
+                      return (
+                        <div
+                          key={ph.id}
+                          className={`flex items-center justify-between p-2.5 rounded-xl border text-xs transition-colors ${
+                            isDone
+                              ? "border-emerald-500/30 bg-emerald-950/25 text-emerald-300"
+                              : "border-slate-800 bg-slate-900/50 text-slate-300"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`text-xs font-bold ${isDone ? "text-emerald-400" : "text-slate-500"}`}>
+                              {isDone ? "✓" : "○"}
+                            </span>
+                            <span className={`truncate font-medium ${isDone ? "line-through text-slate-400" : "text-white"}`}>
+                              {ph.name}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-500 shrink-0 font-mono">
+                            {isDone ? "Completed" : "Pending"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-xs text-slate-400 mb-2">
+                    <p>Your partner hasn't added any habits yet.</p>
+                  </div>
+                )
+              ) : (
+                <div className="py-6 text-center text-xs text-slate-400 mb-2">
+                  <p>Connect with your partner to see their daily habits.</p>
+                </div>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs text-pink-300 hover:text-pink-200 hover:bg-pink-950/30 justify-between"
+                rightIcon={<ChevronRight className="h-3.5 w-3.5" />}
+                onClick={() => navigate(ROUTES.HABITS)}
+              >
+                <span>View All Habits</span>
+                <span className="text-xs font-mono text-pink-400">→</span>
+              </Button>
+            </Card>
+          </div>
+
+          {/* PARTNER ACTIVITY */}
+          <div>
+            <SectionHeader
+              title="Partner Activity"
+              subtitle={isConnected ? `What ${partnerName} did recently` : "Partner activity feed"}
+            />
+            <Card className="p-5">
+              {isConnected && activities.length > 0 ? (
+                <div className="space-y-3">
+                  {activities.slice(0, 4).map((item) => (
+                    <div key={item.id} className="flex gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 border border-slate-700 text-sm">
+                        {item.icon || "✨"}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-slate-300 leading-relaxed">{item.title}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          {new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-6 text-center border border-dashed border-slate-800 rounded-xl">
+                  <Heart className="h-6 w-6 text-slate-600 mx-auto mb-1.5" />
+                  <p className="text-xs font-semibold text-slate-300">
+                    {isConnected ? "No partner activity yet today" : "No partner connected"}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5 max-w-xs mx-auto">
+                    {isConnected
+                      ? `When ${partnerName} completes habits or goals, updates appear here.`
+                      : "Connect with your partner to unlock your shared live timeline."}
+                  </p>
+                </div>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full mt-3 text-xs"
+                rightIcon={<ChevronRight className="h-3.5 w-3.5" />}
+                onClick={() => navigate(ROUTES.PARTNER)}
+              >
+                {isConnected ? "View Partner Space" : "Connect in Partner Space"}
+              </Button>
+            </Card>
+          </div>
         </div>
       </div>
 

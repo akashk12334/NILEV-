@@ -6,6 +6,8 @@ import com.nilev.exception.NilevApiException;
 import com.nilev.habit.dto.*;
 import com.nilev.habit.entity.Habit;
 import com.nilev.habit.entity.HabitCompletion;
+import com.nilev.habit.entity.HabitFrequency;
+import com.nilev.habit.entity.HabitTimeOfDay;
 import com.nilev.habit.repository.HabitCompletionRepository;
 import com.nilev.habit.repository.HabitRepository;
 import com.nilev.habit.service.HabitService;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import com.nilev.companion.service.CompanionService;
 import com.nilev.notification.entity.NotificationType;
@@ -63,19 +66,67 @@ public class HabitServiceImpl implements HabitService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new NilevApiException("User not found", HttpStatus.NOT_FOUND));
 
+        if (request.getStartDate() != null && request.getEndDate() != null
+                && request.getEndDate().isBefore(request.getStartDate())) {
+            throw new NilevApiException("End date cannot be before start date", HttpStatus.BAD_REQUEST);
+        }
+
         Habit habit = Habit.builder()
                 .user(user)
-                .name(request.getName())
+                .name(request.getName().trim())
                 .description(request.getDescription())
-                .icon(request.getIcon() != null ? request.getIcon() : "⭐")
-                .category(request.getCategory() != null ? request.getCategory() : "General")
-                .color(request.getColor() != null ? request.getColor() : "#8B5CF6")
-                .frequency(request.getFrequency())
-                .timeOfDay(request.getTimeOfDay())
+                .icon(request.getIcon() != null && !request.getIcon().isBlank() ? request.getIcon() : "⭐")
+                .category(request.getCategory() != null && !request.getCategory().isBlank() ? request.getCategory() : "General")
+                .color(request.getColor() != null && !request.getColor().isBlank() ? request.getColor() : "#8B5CF6")
+                .frequency(request.getFrequency() != null ? request.getFrequency() : HabitFrequency.DAILY)
+                .timeOfDay(request.getTimeOfDay() != null ? request.getTimeOfDay() : HabitTimeOfDay.ANYTIME)
+                .startDate(request.getStartDate() != null ? request.getStartDate() : LocalDate.now())
+                .endDate(request.getEndDate())
                 .build();
 
         habitRepo.save(habit);
         return toResponse(habit);
+    }
+
+    @Override
+    public List<HabitResponse> createHabitsBulk(Long userId, List<CreateHabitRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            throw new NilevApiException("Habit list cannot be empty", HttpStatus.BAD_REQUEST);
+        }
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new NilevApiException("User not found", HttpStatus.NOT_FOUND));
+
+        List<Habit> toSave = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+
+        for (int i = 0; i < requests.size(); i++) {
+            CreateHabitRequest req = requests.get(i);
+            if (req.getName() == null || req.getName().trim().isEmpty()) {
+                throw new NilevApiException("Habit #" + (i + 1) + " must have a name", HttpStatus.BAD_REQUEST);
+            }
+            if (req.getStartDate() != null && req.getEndDate() != null
+                    && req.getEndDate().isBefore(req.getStartDate())) {
+                throw new NilevApiException("Habit '" + req.getName() + "' end date cannot be before start date", HttpStatus.BAD_REQUEST);
+            }
+
+            Habit habit = Habit.builder()
+                    .user(user)
+                    .name(req.getName().trim())
+                    .description(req.getDescription())
+                    .icon(req.getIcon() != null && !req.getIcon().isBlank() ? req.getIcon() : "⭐")
+                    .category(req.getCategory() != null && !req.getCategory().isBlank() ? req.getCategory() : "General")
+                    .color(req.getColor() != null && !req.getColor().isBlank() ? req.getColor() : "#8B5CF6")
+                    .frequency(req.getFrequency() != null ? req.getFrequency() : HabitFrequency.DAILY)
+                    .timeOfDay(req.getTimeOfDay() != null ? req.getTimeOfDay() : HabitTimeOfDay.ANYTIME)
+                    .startDate(req.getStartDate() != null ? req.getStartDate() : today)
+                    .endDate(req.getEndDate())
+                    .build();
+
+            toSave.add(habit);
+        }
+
+        List<Habit> saved = habitRepo.saveAll(toSave);
+        return saved.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Override
@@ -89,6 +140,86 @@ public class HabitServiceImpl implements HabitService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<HabitResponse> getPartnerHabits(Long currentUserId) {
+        User currentUser = userRepo.findById(currentUserId)
+                .orElseThrow(() -> new NilevApiException("User not found", HttpStatus.NOT_FOUND));
+
+        return partnerConnectionRepo.findActiveConnectionForUser(currentUserId)
+                .map(conn -> {
+                    User partner = conn.getPartnerOf(currentUserId);
+                    if (partner == null) return List.<HabitResponse>of();
+                    return habitRepo.findByUserIdAndActiveTrueOrderByCreatedAtDesc(partner.getId())
+                            .stream()
+                            .map(h -> toResponse(h, currentUser))
+                            .collect(Collectors.toList());
+                })
+                .orElseGet(List::of);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TodayHabitSummaryResponse getTodaySummary(Long currentUserId) {
+        User currentUser = userRepo.findById(currentUserId)
+                .orElseThrow(() -> new NilevApiException("User not found", HttpStatus.NOT_FOUND));
+
+        TodayHabitSummaryResponse summary = new TodayHabitSummaryResponse();
+
+        // 1. Current user active habits for today
+        List<Habit> allUserHabits = habitRepo.findByUserIdAndActiveTrueOrderByCreatedAtDesc(currentUserId);
+        List<HabitResponse> userTodayHabits = allUserHabits.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+        summary.setUserHabits(userTodayHabits);
+
+        // Active today counts (exclude not-started and expired habits from today's active count)
+        List<HabitResponse> userEligibleToday = userTodayHabits.stream()
+                .filter(h -> !"NOT_STARTED".equals(h.getDailyStatus()) && !"EXPIRED".equals(h.getDailyStatus()))
+                .collect(Collectors.toList());
+        int userTotal = userEligibleToday.size();
+        int userDone = (int) userEligibleToday.stream().filter(HabitResponse::isCompletedToday).count();
+        summary.setUserTotalCount(userTotal);
+        summary.setUserCompletedCount(userDone);
+        summary.setUserPercentage(userTotal > 0 ? (int) Math.round(((double) userDone / userTotal) * 100) : 0);
+
+        // 2. Partner habits if connected
+        partnerConnectionRepo.findActiveConnectionForUser(currentUserId).ifPresent(conn -> {
+            User partner = conn.getPartnerOf(currentUserId);
+            if (partner != null) {
+                summary.setPartnerConnected(true);
+                summary.setPartnerName(partner.getName());
+                String pNickname = (partner.getNickname() != null && !partner.getNickname().isBlank())
+                        ? partner.getNickname() : partner.getName();
+                summary.setPartnerNickname(pNickname);
+
+                List<Habit> allPartnerHabits = habitRepo.findByUserIdAndActiveTrueOrderByCreatedAtDesc(partner.getId());
+                List<HabitResponse> partnerTodayHabits = allPartnerHabits.stream()
+                        .map(h -> toResponse(h, currentUser))
+                        .collect(Collectors.toList());
+                summary.setPartnerHabits(partnerTodayHabits);
+
+                List<HabitResponse> partnerEligibleToday = partnerTodayHabits.stream()
+                        .filter(h -> !"NOT_STARTED".equals(h.getDailyStatus()) && !"EXPIRED".equals(h.getDailyStatus()))
+                        .collect(Collectors.toList());
+                int partnerTotal = partnerEligibleToday.size();
+                int partnerDone = (int) partnerEligibleToday.stream().filter(HabitResponse::isCompletedToday).count();
+                summary.setPartnerTotalCount(partnerTotal);
+                summary.setPartnerCompletedCount(partnerDone);
+                summary.setPartnerPercentage(partnerTotal > 0 ? (int) Math.round(((double) partnerDone / partnerTotal) * 100) : 0);
+            }
+        });
+
+        // 3. Shared progress
+        int sharedTotal = summary.getUserTotalCount() + summary.getPartnerTotalCount();
+        int sharedDone = summary.getUserCompletedCount() + summary.getPartnerCompletedCount();
+        summary.setSharedTotalCount(sharedTotal);
+        summary.setSharedCompletedCount(sharedDone);
+        summary.setSharedPercentage(sharedTotal > 0 ? (int) Math.round(((double) sharedDone / sharedTotal) * 100) : 0);
+
+        return summary;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public HabitResponse getHabit(Long userId, Long habitId) {
         Habit habit = requireOwned(userId, habitId);
         return toResponse(habit);
@@ -98,13 +229,19 @@ public class HabitServiceImpl implements HabitService {
     public HabitResponse updateHabit(Long userId, Long habitId, UpdateHabitRequest request) {
         Habit habit = requireOwned(userId, habitId);
 
-        if (request.getName() != null) habit.setName(request.getName());
+        if (request.getName() != null && !request.getName().isBlank()) habit.setName(request.getName().trim());
         if (request.getDescription() != null) habit.setDescription(request.getDescription());
         if (request.getIcon() != null) habit.setIcon(request.getIcon());
         if (request.getCategory() != null) habit.setCategory(request.getCategory());
         if (request.getColor() != null) habit.setColor(request.getColor());
         if (request.getFrequency() != null) habit.setFrequency(request.getFrequency());
         if (request.getTimeOfDay() != null) habit.setTimeOfDay(request.getTimeOfDay());
+        if (request.getStartDate() != null) habit.setStartDate(request.getStartDate());
+        if (request.getEndDate() != null) habit.setEndDate(request.getEndDate());
+        if (habit.getStartDate() != null && habit.getEndDate() != null
+                && habit.getEndDate().isBefore(habit.getStartDate())) {
+            throw new NilevApiException("End date cannot be before start date", HttpStatus.BAD_REQUEST);
+        }
         if (request.getActive() != null) habit.setActive(request.getActive());
 
         return toResponse(habitRepo.save(habit));
@@ -149,6 +286,13 @@ public class HabitServiceImpl implements HabitService {
     public HabitResponse completeHabit(Long userId, Long habitId) {
         Habit habit = requireOwned(userId, habitId);
         LocalDate today = LocalDate.now();
+
+        if (habit.getStartDate() != null && today.isBefore(habit.getStartDate())) {
+            throw new NilevApiException("Cannot complete a habit before its start date", HttpStatus.BAD_REQUEST, "HABIT_NOT_STARTED");
+        }
+        if (habit.getEndDate() != null && today.isAfter(habit.getEndDate())) {
+            throw new NilevApiException("Cannot complete an expired habit", HttpStatus.BAD_REQUEST, "HABIT_EXPIRED");
+        }
 
         if (completionRepo.existsByHabitIdAndCompletedDate(habitId, today)) {
             throw new NilevApiException("Habit already completed today", HttpStatus.CONFLICT, "ALREADY_COMPLETED");
@@ -281,6 +425,10 @@ public class HabitServiceImpl implements HabitService {
 
     /** Map entity → response DTO, computing live stats. */
     private HabitResponse toResponse(Habit habit) {
+        return toResponse(habit, null);
+    }
+
+    private HabitResponse toResponse(Habit habit, User partnerViewer) {
         HabitResponse r = new HabitResponse();
         r.setId(habit.getId());
         r.setUserId(habit.getUser().getId());
@@ -291,15 +439,41 @@ public class HabitServiceImpl implements HabitService {
         r.setColor(habit.getColor());
         r.setFrequency(habit.getFrequency());
         r.setTimeOfDay(habit.getTimeOfDay());
+        r.setStartDate(habit.getStartDate());
+        r.setEndDate(habit.getEndDate());
         r.setActive(habit.isActive());
         r.setCreatedAt(habit.getCreatedAt());
         r.setUpdatedAt(habit.getUpdatedAt());
+
+        User owner = habit.getUser();
+        String ownerNickname = (owner.getNickname() != null && !owner.getNickname().isBlank())
+                ? owner.getNickname() : owner.getName();
+        r.setOwnerName(owner.getName());
+        r.setPartnerNickname(ownerNickname);
+
+        if (partnerViewer != null && !owner.getId().equals(partnerViewer.getId())) {
+            r.setReadOnly(true);
+        } else {
+            r.setReadOnly(false);
+        }
 
         LocalDate today = LocalDate.now();
         Long habitId = habit.getId();
 
         // completedToday
-        r.setCompletedToday(completionRepo.existsByHabitIdAndCompletedDate(habitId, today));
+        boolean doneToday = completionRepo.existsByHabitIdAndCompletedDate(habitId, today);
+        r.setCompletedToday(doneToday);
+
+        // dailyStatus: PENDING, COMPLETED, MISSED, EXPIRED, NOT_STARTED
+        if (habit.getStartDate() != null && today.isBefore(habit.getStartDate())) {
+            r.setDailyStatus("NOT_STARTED");
+        } else if (habit.getEndDate() != null && today.isAfter(habit.getEndDate())) {
+            r.setDailyStatus("EXPIRED");
+        } else if (doneToday) {
+            r.setDailyStatus("COMPLETED");
+        } else {
+            r.setDailyStatus("PENDING");
+        }
 
         // streak & longest
         List<LocalDate> dates = completionRepo.findCompletedDatesByHabitId(habitId);

@@ -6,11 +6,22 @@ import type {
   CreateHabitRequest,
   UpdateHabitRequest,
   HabitCompletionResponse,
+  TodayHabitSummaryResponse,
 } from "../types";
 
 export const habitService = {
   async getAll(): Promise<HabitResponse[]> {
     const res = await apiClient.get<ApiResponse<HabitResponse[]>>(ENDPOINTS.HABITS.BASE);
+    return res.data.data;
+  },
+
+  async getPartnerHabits(): Promise<HabitResponse[]> {
+    const res = await apiClient.get<ApiResponse<HabitResponse[]>>(ENDPOINTS.HABITS.PARTNER);
+    return res.data.data;
+  },
+
+  async getTodaySummary(): Promise<TodayHabitSummaryResponse> {
+    const res = await apiClient.get<ApiResponse<TodayHabitSummaryResponse>>(ENDPOINTS.HABITS.TODAY);
     return res.data.data;
   },
 
@@ -21,6 +32,11 @@ export const habitService = {
 
   async create(data: CreateHabitRequest): Promise<HabitResponse> {
     const res = await apiClient.post<ApiResponse<HabitResponse>>(ENDPOINTS.HABITS.BASE, data);
+    return res.data.data;
+  },
+
+  async createBulk(data: CreateHabitRequest[]): Promise<HabitResponse[]> {
+    const res = await apiClient.post<ApiResponse<HabitResponse[]>>(ENDPOINTS.HABITS.BULK, data);
     return res.data.data;
   },
 

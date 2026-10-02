@@ -8,5 +8,6 @@ public enum HabitFrequency {
     WEEKDAYS,
     WEEKENDS,
     WEEKLY,
-    MONTHLY
+    MONTHLY,
+    CUSTOM
 }

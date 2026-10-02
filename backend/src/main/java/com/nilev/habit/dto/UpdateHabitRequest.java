@@ -4,6 +4,8 @@ import com.nilev.habit.entity.HabitFrequency;
 import com.nilev.habit.entity.HabitTimeOfDay;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
+
 public class UpdateHabitRequest {
 
     @Size(max = 120)
@@ -23,6 +25,8 @@ public class UpdateHabitRequest {
 
     private HabitFrequency frequency;
     private HabitTimeOfDay timeOfDay;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private Boolean active;
 
     public String getName() { return name; }
@@ -45,6 +49,12 @@ public class UpdateHabitRequest {
 
     public HabitTimeOfDay getTimeOfDay() { return timeOfDay; }
     public void setTimeOfDay(HabitTimeOfDay timeOfDay) { this.timeOfDay = timeOfDay; }
+
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
 
     public Boolean getActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }
