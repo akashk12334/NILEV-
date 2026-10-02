@@ -16,6 +16,9 @@ import com.nilev.habit.entity.Habit;
 import com.nilev.habit.repository.HabitCompletionRepository;
 import com.nilev.habit.repository.HabitRepository;
 import com.nilev.goal.repository.GoalRepository;
+import com.nilev.notification.entity.NotificationType;
+import com.nilev.notification.repository.NotificationRepository;
+import com.nilev.notification.service.NotificationService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +43,8 @@ public class PartnerServiceImpl implements PartnerService {
     private final HabitRepository habitRepository;
     private final HabitCompletionRepository habitCompletionRepository;
     private final GoalRepository goalRepository;
+    private final NotificationService notificationService;
+    private final NotificationRepository notificationRepository;
 
     public PartnerServiceImpl(UserRepository userRepository,
                               PartnerConnectionRepository partnerConnectionRepository,
@@ -49,7 +54,9 @@ public class PartnerServiceImpl implements PartnerService {
                               CompanionRepository companionRepository,
                               HabitRepository habitRepository,
                               HabitCompletionRepository habitCompletionRepository,
-                              GoalRepository goalRepository) {
+                              GoalRepository goalRepository,
+                              NotificationService notificationService,
+                              NotificationRepository notificationRepository) {
         this.userRepository = userRepository;
         this.partnerConnectionRepository = partnerConnectionRepository;
         this.partnerInvitationRepository = partnerInvitationRepository;
@@ -59,6 +66,8 @@ public class PartnerServiceImpl implements PartnerService {
         this.habitRepository = habitRepository;
         this.habitCompletionRepository = habitCompletionRepository;
         this.goalRepository = goalRepository;
+        this.notificationService = notificationService;
+        this.notificationRepository = notificationRepository;
     }
 
     @Override
@@ -134,6 +143,22 @@ public class PartnerServiceImpl implements PartnerService {
                 "Sent partnership invitation to " + targetUser.getName(),
                 "💌",
                 String.format("{\"targetEmail\":\"%s\"}", targetUser.getEmail())
+        );
+
+        String senderDisplayName = currentUser.getNickname() != null && !currentUser.getNickname().isBlank()
+                ? currentUser.getNickname()
+                : currentUser.getName();
+
+        notificationService.sendNotification(
+                targetUser,
+                currentUser,
+                NotificationType.PARTNER_INVITATION,
+                "Partner Invitation Received 💌",
+                senderDisplayName + " invited you to connect sanctuaries on NILEV!",
+                "💌",
+                invitation.getId(),
+                "PARTNER_INVITATION",
+                "/partner"
         );
 
         return PartnerStatusResponse.invitationSent(
@@ -239,6 +264,49 @@ public class PartnerServiceImpl implements PartnerService {
                 String.format("{\"partnerName\":\"%s\"}", currentUser.getName())
         );
 
+        String receiverDisplayName = currentUser.getNickname() != null && !currentUser.getNickname().isBlank()
+                ? currentUser.getNickname()
+                : currentUser.getName();
+        String senderDisplayName = sender.getNickname() != null && !sender.getNickname().isBlank()
+                ? sender.getNickname()
+                : sender.getName();
+
+        // 1. Notify Sender that invitation was accepted
+        notificationService.sendNotification(
+                sender,
+                currentUser,
+                NotificationType.PARTNER_INVITATION_ACCEPTED,
+                "Partner Invitation Accepted! 💞",
+                receiverDisplayName + " accepted your partner invitation! Your sanctuary is now linked.",
+                "💞",
+                connection.getId(),
+                "PARTNER_CONNECTION",
+                "/partner"
+        );
+
+        // 2. Notify CurrentUser that connection is established
+        notificationService.sendNotification(
+                currentUser,
+                sender,
+                NotificationType.PARTNER_CONNECTED,
+                "Sanctuary Connected! ❤️",
+                "You are now linked with " + senderDisplayName + "! Start sharing habits, goals, and surprises together.",
+                "❤️",
+                connection.getId(),
+                "PARTNER_CONNECTION",
+                "/partner"
+        );
+
+        // 3. Mark original PARTNER_INVITATION notification for currentUser as read
+        try {
+            notificationRepository.findByUserIdAndReferenceIdAndType(currentUserId, invitation.getId(), NotificationType.PARTNER_INVITATION)
+                    .forEach(n -> {
+                        n.setRead(true);
+                        n.setReadAt(Instant.now());
+                        notificationRepository.save(n);
+                    });
+        } catch (Exception ignored) {}
+
         int sharedStreak = computeSharedStreak(currentUser.getId(), sender.getId(), LocalDate.now());
         if (sharedStreak == 0 && connection.getSharedStreak() > 0) {
             sharedStreak = connection.getSharedStreak();
@@ -274,6 +342,35 @@ public class PartnerServiceImpl implements PartnerService {
         invitation.setStatus(InvitationStatus.REJECTED);
         partnerInvitationRepository.save(invitation);
 
+        User sender = invitation.getSender();
+        if (sender != null) {
+            String receiverDisplayName = currentUser.getNickname() != null && !currentUser.getNickname().isBlank()
+                    ? currentUser.getNickname()
+                    : currentUser.getName();
+
+            notificationService.sendNotification(
+                    sender,
+                    currentUser,
+                    NotificationType.PARTNER_INVITATION_REJECTED,
+                    "Partner Request Declined 💔",
+                    receiverDisplayName + " declined your partner invitation.",
+                    "💔",
+                    invitation.getId(),
+                    "PARTNER_INVITATION",
+                    "/partner"
+            );
+        }
+
+        // Mark original PARTNER_INVITATION notification for currentUser as read
+        try {
+            notificationRepository.findByUserIdAndReferenceIdAndType(currentUserId, invitation.getId(), NotificationType.PARTNER_INVITATION)
+                    .forEach(n -> {
+                        n.setRead(true);
+                        n.setReadAt(Instant.now());
+                        notificationRepository.save(n);
+                    });
+        } catch (Exception ignored) {}
+
         return PartnerStatusResponse.noPartner(buildPartnerProfile(currentUser, false));
     }
 
@@ -294,6 +391,25 @@ public class PartnerServiceImpl implements PartnerService {
                 .icon("💔")
                 .build();
         partnerActivityRepository.save(activity);
+
+        User partner = connection.getPartnerOf(currentUserId);
+        if (partner != null) {
+            String userDisplayName = currentUser.getNickname() != null && !currentUser.getNickname().isBlank()
+                    ? currentUser.getNickname()
+                    : currentUser.getName();
+
+            notificationService.sendNotification(
+                    partner,
+                    currentUser,
+                    NotificationType.PARTNER_DISCONNECTED,
+                    "Partner Disconnected 💔",
+                    userDisplayName + " has disconnected your shared sanctuary.",
+                    "💔",
+                    connection.getId(),
+                    "PARTNER_CONNECTION",
+                    "/partner"
+            );
+        }
     }
 
     @Override

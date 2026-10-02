@@ -6,6 +6,10 @@ package com.nilev.notification.entity;
 public enum NotificationType {
     PARTNER_CONNECTED("Partner Connected", "💞", "RELATIONSHIP"),
     PARTNER_ACTIVITY("Partner Activity", "✨", "RELATIONSHIP"),
+    PARTNER_INVITATION("Partner Invitation", "💌", "RELATIONSHIP"),
+    PARTNER_INVITATION_ACCEPTED("Partner Accepted", "💞", "RELATIONSHIP"),
+    PARTNER_INVITATION_REJECTED("Partner Declined", "💔", "RELATIONSHIP"),
+    PARTNER_DISCONNECTED("Partner Disconnected", "💔", "RELATIONSHIP"),
     HABIT_REMINDER("Habit Reminder", "🌱", "HABITS"),
     HABIT_COMPLETED("Habit Completed", "✅", "HABITS"),
     HABIT_DELETED("Habit Removed", "🗑️", "HABITS"),

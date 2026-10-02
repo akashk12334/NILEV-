@@ -25,6 +25,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Optional<Notification> findByIdAndUserId(Long id, Long userId);
 
+    boolean existsByUserIdAndReferenceIdAndType(Long userId, Long referenceId, com.nilev.notification.entity.NotificationType type);
+
+    @Query("SELECT n FROM Notification n WHERE n.user.id = :userId AND n.referenceId = :referenceId AND n.type = :type")
+    List<Notification> findByUserIdAndReferenceIdAndType(@Param("userId") Long userId, @Param("referenceId") Long referenceId, @Param("type") com.nilev.notification.entity.NotificationType type);
+
     @Modifying
     @Query("UPDATE Notification n SET n.isRead = true, n.readAt = :now WHERE n.user.id = :userId AND n.isRead = false")
     int markAllAsRead(@Param("userId") Long userId, @Param("now") Instant now);
