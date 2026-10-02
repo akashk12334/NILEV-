@@ -18,6 +18,7 @@ import {
   X,
   User,
   Users,
+  Infinity as InfinityIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../constants";
@@ -317,7 +318,13 @@ function HabitCard({
                 <span className="text-slate-500 flex items-center gap-1">
                   <Calendar className="h-2.5 w-2.5 text-violet-400" />
                   {startDateFormatted}
-                  {endDateFormatted ? ` – ${endDateFormatted}` : " (Ongoing)"}
+                  {endDateFormatted ? (
+                    <span>– {endDateFormatted}</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-0.5 text-violet-400 font-medium">
+                      – <InfinityIcon className="h-2.5 w-2.5 inline" /> Endless
+                    </span>
+                  )}
                 </span>
               )}
             </div>
@@ -430,6 +437,7 @@ function HabitForm({
     initial?.startDate ?? new Date().toISOString().split("T")[0]
   );
   const [endDate, setEndDate] = React.useState(initial?.endDate ?? "");
+  const [isEndless, setIsEndless] = React.useState(!initial?.endDate);
   const [error, setError] = React.useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -437,7 +445,7 @@ function HabitForm({
     setError(null);
     if (!name.trim()) return;
 
-    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+    if (!isEndless && startDate && endDate && new Date(endDate) < new Date(startDate)) {
       setError("End date cannot be before start date.");
       return;
     }
@@ -451,7 +459,7 @@ function HabitForm({
       frequency,
       timeOfDay,
       startDate: startDate || undefined,
-      endDate: endDate || undefined,
+      endDate: isEndless ? undefined : (endDate || undefined),
     });
   };
 
@@ -493,33 +501,107 @@ function HabitForm({
         />
       </div>
 
-      {/* Dates: Start Date & End Date */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className={labelCls}>
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3 text-violet-400" /> Start Date
-            </span>
-          </label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className={inputCls}
-          />
+      {/* Dates: Start Date & End Date (with Endless toggle) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className={labelCls}>Habit Duration</label>
+          <div className="flex items-center gap-1 bg-slate-950/60 p-0.5 rounded-lg border border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                setIsEndless(true);
+                setEndDate("");
+              }}
+              className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md font-semibold transition-all ${
+                isEndless
+                  ? "bg-violet-600 text-white shadow-[0_0_10px_rgba(139,92,246,0.4)]"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <InfinityIcon className="h-3 w-3" />
+              <span>Endless</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsEndless(false);
+                if (!endDate) {
+                  const base = startDate ? new Date(startDate) : new Date();
+                  base.setDate(base.getDate() + 30);
+                  setEndDate(base.toISOString().split("T")[0]);
+                }
+              }}
+              className={`flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-md font-semibold transition-all ${
+                !isEndless
+                  ? "bg-pink-600 text-white shadow-[0_0_10px_rgba(236,72,153,0.4)]"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Calendar className="h-3 w-3" />
+              <span>Target End Date</span>
+            </button>
+          </div>
         </div>
-        <div>
-          <label className={labelCls}>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-pink-400" /> End Date (Optional)
-            </span>
-          </label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className={inputCls}
-          />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3 text-violet-400" /> Start Date
+              </span>
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3 text-pink-400" /> End Date
+              </span>
+            </label>
+            {isEndless ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEndless(false);
+                  const base = startDate ? new Date(startDate) : new Date();
+                  base.setDate(base.getDate() + 30);
+                  setEndDate(base.toISOString().split("T")[0]);
+                }}
+                className="w-full flex items-center justify-between h-[42px] px-3 rounded-xl border border-dashed border-violet-500/40 bg-violet-950/20 text-violet-300 text-xs hover:border-violet-400 hover:bg-violet-950/40 transition-all text-left group"
+              >
+                <span className="flex items-center gap-1.5 font-medium">
+                  <InfinityIcon className="h-4 w-4 text-violet-400 group-hover:scale-110 transition-transform" />
+                  <span>Endless Routine (No expiration)</span>
+                </span>
+                <span className="text-[10px] text-slate-500 group-hover:text-violet-300 transition-colors">Set date →</span>
+              </button>
+            ) : (
+              <div className="relative">
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate || undefined}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className={`${inputCls} pr-20`}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEndless(true);
+                    setEndDate("");
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-[10px] font-semibold text-violet-400 bg-violet-950/60 border border-violet-500/30 rounded-md hover:bg-violet-900/60 transition-colors"
+                >
+                  Make Endless ∞
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus, Trash2, Loader2, Sparkles, Calendar, Clock, Layers } from "lucide-react";
+import { Plus, Trash2, Loader2, Sparkles, Calendar, Clock, Layers, Infinity as InfinityIcon } from "lucide-react";
 import { Button, Modal } from "../ui";
 import type { HabitFrequency, HabitTimeOfDay, CreateHabitRequest } from "../../types";
 
@@ -315,33 +315,97 @@ export const BulkCreateHabitsModal: React.FC<BulkCreateHabitsModalProps> = ({
                 </div>
               </div>
 
-              {/* Start & End Dates */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-900">
-                <div>
-                  <label className={labelCls}>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3 text-violet-400" /> Start Date
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={row.startDate}
-                    onChange={(e) => handleChange(row.id, "startDate", e.target.value)}
-                    className={inputCls}
-                  />
+              {/* Start & End Dates with Endless toggle */}
+              <div className="space-y-2 pt-2 border-t border-slate-900">
+                <div className="flex items-center justify-between">
+                  <span className={labelCls}>Schedule Duration</span>
+                  <div className="flex items-center gap-1 bg-slate-950/80 p-0.5 rounded-lg border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => handleChange(row.id, "endDate", "")}
+                      className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-semibold transition-all ${
+                        !row.endDate
+                          ? "bg-violet-600 text-white shadow-[0_0_8px_rgba(139,92,246,0.4)]"
+                          : "text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <InfinityIcon className="h-3 w-3" />
+                      <span>Endless</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const base = row.startDate ? new Date(row.startDate) : new Date();
+                        base.setDate(base.getDate() + 30);
+                        handleChange(row.id, "endDate", base.toISOString().split("T")[0]);
+                      }}
+                      className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-semibold transition-all ${
+                        row.endDate
+                          ? "bg-pink-600 text-white shadow-[0_0_8px_rgba(236,72,153,0.4)]"
+                          : "text-slate-400 hover:text-slate-200"
+                      }`}
+                    >
+                      <Calendar className="h-3 w-3" />
+                      <span>End Date</span>
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label className={labelCls}>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-pink-400" /> End Date (Optional)
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={row.endDate}
-                    onChange={(e) => handleChange(row.id, "endDate", e.target.value)}
-                    className={inputCls}
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelCls}>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3 text-violet-400" /> Start Date
+                      </span>
+                    </label>
+                    <input
+                      type="date"
+                      value={row.startDate}
+                      onChange={(e) => handleChange(row.id, "startDate", e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls}>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-pink-400" /> End Date
+                      </span>
+                    </label>
+                    {!row.endDate ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const base = row.startDate ? new Date(row.startDate) : new Date();
+                          base.setDate(base.getDate() + 30);
+                          handleChange(row.id, "endDate", base.toISOString().split("T")[0]);
+                        }}
+                        className="w-full flex items-center justify-between h-[42px] px-3 rounded-xl border border-dashed border-violet-500/40 bg-violet-950/20 text-violet-300 text-xs hover:border-violet-400 hover:bg-violet-950/40 transition-all text-left group"
+                      >
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <InfinityIcon className="h-4 w-4 text-violet-400 group-hover:scale-110 transition-transform" />
+                          <span>Endless Routine (No expiration)</span>
+                        </span>
+                        <span className="text-[10px] text-slate-500 group-hover:text-violet-300 transition-colors">Set date →</span>
+                      </button>
+                    ) : (
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={row.endDate}
+                          min={row.startDate || undefined}
+                          onChange={(e) => handleChange(row.id, "endDate", e.target.value)}
+                          className={`${inputCls} pr-20`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleChange(row.id, "endDate", "")}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-[10px] font-semibold text-violet-400 bg-violet-950/60 border border-violet-500/30 rounded-md hover:bg-violet-900/60 transition-colors"
+                        >
+                          Make Endless ∞
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
