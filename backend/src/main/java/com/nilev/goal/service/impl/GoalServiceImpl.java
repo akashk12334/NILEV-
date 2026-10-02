@@ -9,6 +9,8 @@ import com.nilev.goal.entity.GoalStatus;
 import com.nilev.goal.entity.GoalType;
 import com.nilev.goal.repository.GoalRepository;
 import com.nilev.goal.service.GoalService;
+import com.nilev.notification.entity.NotificationType;
+import com.nilev.notification.service.NotificationService;
 import com.nilev.partner.repository.PartnerConnectionRepository;
 import com.nilev.user.entity.User;
 import com.nilev.user.repository.UserRepository;
@@ -32,17 +34,20 @@ public class GoalServiceImpl implements GoalService {
     private final PartnerConnectionRepository partnerConnectionRepo;
     private final ActivityService activityService;
     private final com.nilev.companion.service.CompanionService companionService;
+    private final NotificationService notificationService;
 
     public GoalServiceImpl(GoalRepository goalRepo,
                            UserRepository userRepo,
                            PartnerConnectionRepository partnerConnectionRepo,
                            ActivityService activityService,
-                           com.nilev.companion.service.CompanionService companionService) {
+                           com.nilev.companion.service.CompanionService companionService,
+                           NotificationService notificationService) {
         this.goalRepo = goalRepo;
         this.userRepo = userRepo;
         this.partnerConnectionRepo = partnerConnectionRepo;
         this.activityService = activityService;
         this.companionService = companionService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -211,7 +216,32 @@ public class GoalServiceImpl implements GoalService {
     @Override
     public void deleteGoal(Long currentUserId, Long goalId) {
         Goal goal = requireModifiableGoal(currentUserId, goalId);
+        User actor = userRepo.findById(currentUserId).orElse(goal.getOwner());
+        User partner = resolvePartnerUser(goal, currentUserId);
+
         goalRepo.delete(goal);
+
+        // Notify connected partner
+        try {
+            if (partner != null) {
+                String actorName = (actor.getNickname() != null && !actor.getNickname().isBlank())
+                        ? actor.getNickname() : actor.getName();
+                String goalTypePrefix = (goal.getType() == GoalType.SHARED) ? "shared " : "";
+                notificationService.sendNotification(
+                        partner,
+                        actor,
+                        NotificationType.GOAL_DELETED,
+                        actorName + " removed a goal",
+                        actorName + " deleted the " + goalTypePrefix + "goal \"" + goal.getTitle() + "\".",
+                        "🗑️",
+                        goalId,
+                        "GOAL",
+                        "/goals"
+                );
+            }
+        } catch (Exception e) {
+            log.warn("Failed to send goal deletion notification: {}", e.getMessage());
+        }
     }
 
     // ── Milestone Event Logic ────────────────────────────────────────
@@ -274,8 +304,31 @@ public class GoalServiceImpl implements GoalService {
                     "Progressed \"" + goal.getTitle() + "\" to " + milestone + "% (+2 XP)",
                     goal.getIcon() != null ? goal.getIcon() : "🎯"
             );
+
+            // Notify connected partner
+            User actor = userRepo.findById(actorId).orElse(goal.getOwner());
+            User partner = resolvePartnerUser(goal, actorId);
+            if (partner != null) {
+                String actorName = (actor.getNickname() != null && !actor.getNickname().isBlank())
+                        ? actor.getNickname() : actor.getName();
+                String notifTitle = (goal.getType() == GoalType.SHARED)
+                        ? "Shared Goal: " + milestone + "% Reached! 🎯"
+                        : actorName + " reached " + milestone + "% on a goal! 🎯";
+                String notifMessage = actorName + " progressed \"" + goal.getTitle() + "\" to " + milestone + "%.";
+                notificationService.sendNotification(
+                        partner,
+                        actor,
+                        NotificationType.GOAL_MILESTONE,
+                        notifTitle,
+                        notifMessage,
+                        goal.getIcon() != null && !goal.getIcon().isBlank() ? goal.getIcon() : "🎯",
+                        goal.getId(),
+                        "GOAL",
+                        "/goals"
+                );
+            }
         } catch (Exception e) {
-            log.warn("Failed to publish goal progress event: {}", e.getMessage());
+            log.warn("Failed to publish goal progress event or notification: {}", e.getMessage());
         }
     }
 
@@ -315,9 +368,46 @@ public class GoalServiceImpl implements GoalService {
                     "Achieved 100% on \"" + goal.getTitle() + "\" (+3 XP Bonus)",
                     "🏅"
             );
+
+            // Notify connected partner
+            User actor = userRepo.findById(actorId).orElse(goal.getOwner());
+            User partner = resolvePartnerUser(goal, actorId);
+            if (partner != null) {
+                String actorName = (actor.getNickname() != null && !actor.getNickname().isBlank())
+                        ? actor.getNickname() : actor.getName();
+                String notifTitle = (goal.getType() == GoalType.SHARED)
+                        ? "Shared Goal Accomplished! 🏆"
+                        : actorName + " completed a goal! 🏆";
+                String notifMessage = actorName + " accomplished 100% of \"" + goal.getTitle() + "\"! 🎉";
+                notificationService.sendNotification(
+                        partner,
+                        actor,
+                        NotificationType.GOAL_COMPLETED,
+                        notifTitle,
+                        notifMessage,
+                        goal.getIcon() != null && !goal.getIcon().isBlank() ? goal.getIcon() : "🏆",
+                        goal.getId(),
+                        "GOAL",
+                        "/goals"
+                );
+            }
         } catch (Exception e) {
-            log.warn("Failed to publish goal completed event: {}", e.getMessage());
+            log.warn("Failed to publish goal completed event or notification: {}", e.getMessage());
         }
+    }
+
+    private User resolvePartnerUser(Goal goal, Long actorId) {
+        if (goal.getType() == GoalType.SHARED) {
+            if (goal.getPartner() != null && !goal.getPartner().getId().equals(actorId)) {
+                return goal.getPartner();
+            }
+            if (goal.getOwner() != null && !goal.getOwner().getId().equals(actorId)) {
+                return goal.getOwner();
+            }
+        }
+        return partnerConnectionRepo.findActiveConnectionForUser(actorId)
+                .map(conn -> conn.getPartnerOf(actorId))
+                .orElse(null);
     }
 
     // ── Authorization & Access Helpers ───────────────────────────────

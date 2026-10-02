@@ -7,8 +7,11 @@ public enum NotificationType {
     PARTNER_CONNECTED("Partner Connected", "💞", "RELATIONSHIP"),
     PARTNER_ACTIVITY("Partner Activity", "✨", "RELATIONSHIP"),
     HABIT_REMINDER("Habit Reminder", "🌱", "HABITS"),
+    HABIT_COMPLETED("Habit Completed", "✅", "HABITS"),
+    HABIT_DELETED("Habit Removed", "🗑️", "HABITS"),
     GOAL_MILESTONE("Goal Milestone", "🎯", "GOALS"),
     GOAL_COMPLETED("Goal Completed", "🏆", "GOALS"),
+    GOAL_DELETED("Goal Removed", "🗑️", "GOALS"),
     COMPANION_LEVEL_UP("Companion Level Up", "⭐", "COMPANION"),
     SURPRISE_RECEIVED("Surprise Received", "🎁", "SURPRISES"),
     SURPRISE_OPENED("Surprise Opened", "💌", "SURPRISES");

@@ -34,13 +34,13 @@ export const NotificationDropdown: React.FC = () => {
   useEffect(() => {
     fetchNotifications();
 
-    // Subtle background poll every 45s for fresh partner updates
+    // Responsive background poll every 15s for fresh partner updates
     const interval = setInterval(() => {
       notificationService
         .getUnreadCount()
         .then((count) => setUnreadCount(count))
         .catch(() => {});
-    }, 45000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, []);

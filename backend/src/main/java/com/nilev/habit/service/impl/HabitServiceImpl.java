@@ -11,6 +11,8 @@ import com.nilev.habit.repository.HabitRepository;
 import com.nilev.habit.service.HabitService;
 import com.nilev.user.entity.User;
 import com.nilev.user.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,28 +20,40 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import com.nilev.companion.service.CompanionService;
+import com.nilev.notification.entity.NotificationType;
+import com.nilev.notification.service.NotificationService;
+import com.nilev.partner.entity.PartnerConnection;
+import com.nilev.partner.repository.PartnerConnectionRepository;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class HabitServiceImpl implements HabitService {
 
+    private static final Logger log = LoggerFactory.getLogger(HabitServiceImpl.class);
+
     private final HabitRepository habitRepo;
     private final HabitCompletionRepository completionRepo;
     private final UserRepository userRepo;
     private final ActivityService activityService;
     private final CompanionService companionService;
+    private final NotificationService notificationService;
+    private final PartnerConnectionRepository partnerConnectionRepo;
 
     public HabitServiceImpl(HabitRepository habitRepo,
                             HabitCompletionRepository completionRepo,
                             UserRepository userRepo,
                             ActivityService activityService,
-                            CompanionService companionService) {
+                            CompanionService companionService,
+                            NotificationService notificationService,
+                            PartnerConnectionRepository partnerConnectionRepo) {
         this.habitRepo = habitRepo;
         this.completionRepo = completionRepo;
         this.userRepo = userRepo;
         this.activityService = activityService;
         this.companionService = companionService;
+        this.notificationService = notificationService;
+        this.partnerConnectionRepo = partnerConnectionRepo;
     }
 
     // ── CRUD ────────────────────────────────────────────────────────
@@ -99,9 +113,34 @@ public class HabitServiceImpl implements HabitService {
     @Override
     public void deleteHabit(Long userId, Long habitId) {
         Habit habit = requireOwned(userId, habitId);
+        User user = habit.getUser();
         // Soft-delete: mark inactive
         habit.setActive(false);
         habitRepo.save(habit);
+
+        // Notify connected partner
+        try {
+            partnerConnectionRepo.findActiveConnectionForUser(userId).ifPresent(conn -> {
+                User partner = conn.getPartnerOf(userId);
+                if (partner != null) {
+                    String actorName = (user.getNickname() != null && !user.getNickname().isBlank())
+                            ? user.getNickname() : user.getName();
+                    notificationService.sendNotification(
+                            partner,
+                            user,
+                            NotificationType.HABIT_DELETED,
+                            actorName + " removed a habit",
+                            actorName + " removed the habit \"" + habit.getName() + "\".",
+                            "🗑️",
+                            habit.getId(),
+                            "HABIT",
+                            "/habits"
+                    );
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Failed to send habit deletion notification to partner: {}", e.getMessage());
+        }
     }
 
     // ── Completion ──────────────────────────────────────────────────
@@ -176,7 +215,29 @@ public class HabitServiceImpl implements HabitService {
                         "🔥"
                 );
             }
-        } catch (Exception ignored) {}
+
+            // Notify connected partner
+            partnerConnectionRepo.findActiveConnectionForUser(userId).ifPresent(conn -> {
+                User partner = conn.getPartnerOf(userId);
+                if (partner != null) {
+                    String actorName = (user.getNickname() != null && !user.getNickname().isBlank())
+                            ? user.getNickname() : user.getName();
+                    notificationService.sendNotification(
+                            partner,
+                            user,
+                            NotificationType.HABIT_COMPLETED,
+                            actorName + " completed a habit! 🌱",
+                            actorName + " completed \"" + habit.getName() + "\" (" + response.getCurrentStreak() + "-day streak) ✨",
+                            habit.getIcon() != null && !habit.getIcon().isBlank() ? habit.getIcon() : "🌱",
+                            habit.getId(),
+                            "HABIT",
+                            "/partner"
+                    );
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Failed to publish habit completion event or notification: {}", e.getMessage());
+        }
 
         return response;
     }
