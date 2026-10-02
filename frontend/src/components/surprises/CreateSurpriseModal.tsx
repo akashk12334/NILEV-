@@ -245,7 +245,7 @@ export const CreateSurpriseModal: React.FC<CreateSurpriseModalProps> = ({
         </div>
 
         {/* 6. Action Buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/10">
+        <div className="sticky bottom-0 z-20 -mx-1 -mb-1 mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-[#0d1124]/95 px-2 py-3 backdrop-blur-md rounded-b-xl shadow-2xl">
           <Button
             type="button"
             variant="ghost"
@@ -264,7 +264,7 @@ export const CreateSurpriseModal: React.FC<CreateSurpriseModalProps> = ({
               size="sm"
               onClick={() => handleSubmit(true)}
               disabled={isSubmitting}
-              className="border-white/10 bg-slate-800/40 text-slate-300 hover:text-white text-xs"
+              className="border-white/10 bg-slate-800/60 text-slate-300 hover:text-white text-xs"
             >
               <Save className="w-3.5 h-3.5 mr-1.5" />
               <span>Save Draft</span>
@@ -272,7 +272,7 @@ export const CreateSurpriseModal: React.FC<CreateSurpriseModalProps> = ({
 
             <Button
               type="button"
-              variant="default"
+              variant="glow"
               size="sm"
               onClick={() => handleSubmit(false)}
               disabled={isSubmitting}

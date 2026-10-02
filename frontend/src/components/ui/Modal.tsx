@@ -49,7 +49,7 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-[#070913]/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
@@ -60,7 +60,7 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal Dialog */}
       <div
         className={cn(
-          "relative z-50 w-full overflow-hidden rounded-2xl border border-[rgba(168,85,247,0.25)] bg-[rgba(13,17,34,0.92)] backdrop-blur-2xl p-6 text-slate-100 shadow-2xl shadow-black/80 ring-1 ring-white/10 animate-in zoom-in-95 duration-200",
+          "relative z-50 w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col overflow-hidden rounded-2xl border border-[rgba(168,85,247,0.25)] bg-[rgba(13,17,34,0.96)] backdrop-blur-2xl p-5 sm:p-6 text-slate-100 shadow-2xl shadow-black/80 ring-1 ring-white/10 animate-in zoom-in-95 duration-200",
           sizeClasses[size],
           className
         )}
@@ -70,7 +70,7 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
           aria-label="Close modal"
         >
           <X className="h-4 w-4" />
@@ -78,7 +78,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Header */}
         {(title || description) && (
-          <div className="mb-5 pr-6">
+          <div className="mb-4 pr-8 shrink-0">
             {title && (
               <h3 className="text-lg font-semibold tracking-tight text-white">
                 {title}
@@ -93,11 +93,13 @@ export const Modal: React.FC<ModalProps> = ({
         )}
 
         {/* Content Body */}
-        <div className="text-sm text-slate-300">{children}</div>
+        <div className="text-sm text-slate-300 flex-1 overflow-y-auto pr-1 -mr-1">
+          {children}
+        </div>
 
         {/* Footer */}
         {footer && (
-          <div className="mt-6 flex items-center justify-end space-x-3 border-t border-[rgba(147,130,255,0.1)] pt-4">
+          <div className="mt-4 shrink-0 flex items-center justify-end space-x-3 border-t border-[rgba(147,130,255,0.1)] pt-4">
             {footer}
           </div>
         )}
