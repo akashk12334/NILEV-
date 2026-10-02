@@ -74,7 +74,7 @@ public class PartnerProfileResponse {
                 user.getCompanionLevel(),
                 user.getCompanionMood(),
                 user.getHabitsCompletedCount(),
-                user.getGoalsCount(),
+                0,
                 isPartner,
                 isPartner // If isPartner == true, readOnly == true!
         );

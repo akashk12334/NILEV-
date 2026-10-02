@@ -367,18 +367,10 @@ public class PartnerServiceImpl implements PartnerService {
                 maxStreak = hStreak;
             }
         }
-        if (maxStreak == 0 && user.getStreak() > 0 && activeHabits.isEmpty()) {
-            maxStreak = user.getStreak();
-        }
-        if (totalCompletedCount == 0 && user.getHabitsCompletedCount() > 0 && activeHabits.isEmpty()) {
-            totalCompletedCount = user.getHabitsCompletedCount();
-        }
 
-        // 3. Live personal goals count
-        int goalsCount = goalRepository.findPersonalGoals(userId).size();
-        if (goalsCount == 0 && user.getGoalsCount() > 0) {
-            goalsCount = user.getGoalsCount();
-        }
+        // 3. Live goals count (personal + shared)
+        int goalsCount = goalRepository.findPersonalGoals(userId).size()
+                       + goalRepository.findSharedGoalsForSingleUser(userId).size();
 
         PartnerProfileResponse res = new PartnerProfileResponse(
                 user.getId(),
