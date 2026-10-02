@@ -38,6 +38,20 @@ public class UserSeedInitializer implements CommandLineRunner {
     public void run(String... args) {
         try {
             if (userRepository.count() > 0) {
+                // Clear XP for all existing users to ensure everyone's XP is reset
+                java.util.List<User> existingUsers = userRepository.findAll();
+                boolean updated = false;
+                for (User u : existingUsers) {
+                    if (u.getXp() > 0) {
+                        u.setXp(0);
+                        u.setLevel(1);
+                        userRepository.save(u);
+                        updated = true;
+                    }
+                }
+                if (updated) {
+                    log.info("Reset XP to 0 and level to 1 for all existing users.");
+                }
                 return;
             }
 
@@ -52,12 +66,12 @@ public class UserSeedInitializer implements CommandLineRunner {
                     .avatarUrl("https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80")
                     .role("USER")
                     .active(true)
-                    .xp(340)
-                    .level(3)
+                    .xp(0)
+                    .level(1)
                     .streak(5)
                     .companionName("Luna")
                     .companionType("Wolf")
-                    .companionLevel(3)
+                    .companionLevel(1)
                     .companionMood("Empowered")
                     .habitsCompletedCount(18)
                     .goalsCount(4)
@@ -71,12 +85,12 @@ public class UserSeedInitializer implements CommandLineRunner {
                     .avatarUrl("https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80")
                     .role("USER")
                     .active(true)
-                    .xp(420)
-                    .level(4)
+                    .xp(0)
+                    .level(1)
                     .streak(7)
                     .companionName("Sol")
                     .companionType("Fox")
-                    .companionLevel(4)
+                    .companionLevel(1)
                     .companionMood("Radiant")
                     .habitsCompletedCount(24)
                     .goalsCount(5)

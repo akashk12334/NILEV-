@@ -42,6 +42,20 @@ public class CompanionSeedInitializer implements CommandLineRunner {
     public void run(String... args) {
         try {
             if (companionRepo.count() > 0) {
+                // Clear XP for all existing companions to ensure everyone's XP is reset
+                List<Companion> existingCompanions = companionRepo.findAll();
+                boolean updated = false;
+                for (Companion c : existingCompanions) {
+                    if (c.getXp() > 0 || c.getLevel() > 1) {
+                        c.setXp(0);
+                        c.setLevel(1);
+                        companionRepo.save(c);
+                        updated = true;
+                    }
+                }
+                if (updated) {
+                    log.info("Reset XP to 0 and level to 1 for all existing companions.");
+                }
                 return;
             }
 
@@ -56,8 +70,8 @@ public class CompanionSeedInitializer implements CommandLineRunner {
             log.info("Seeding realistic companions for {} and {}", user1.getName(), user2.getName());
 
             // Companion 1: Alex's Wolf "Nova"
-            int alexXp = 520;
-            int alexLevel = CompanionLevelCalculator.calculateLevelFromXp(alexXp);
+            int alexXp = 0;
+            int alexLevel = 1;
             Companion alexComp = Companion.builder()
                     .user(user1)
                     .animalType(AnimalType.WOLF)
@@ -66,21 +80,17 @@ public class CompanionSeedInitializer implements CommandLineRunner {
                     .level(alexLevel)
                     .happiness(92)
                     .energy(88)
-                    .mood(CompanionMood.ECSTATIC)
+                    .mood(CompanionMood.HAPPY)
                     .build();
             alexComp = companionRepo.save(alexComp);
 
             historyRepo.save(new CompanionHistory(alexComp, "ANIMAL_CHOSEN", 0, "Bond Forged", "You bonded with Nova the Wolf.", "🐺"));
-            historyRepo.save(new CompanionHistory(alexComp, "HABIT_COMPLETED", 25, "Morning Meditation Completed", "Daily mindfulness habit finished.", "🧘"));
-            historyRepo.save(new CompanionHistory(alexComp, "HABIT_STREAK", 50, "7-Day Habit Streak!", "Nova resonated with your sustained dedication.", "🔥"));
-            historyRepo.save(new CompanionHistory(alexComp, "GOAL_MILESTONE", 50, "Milestone Reached (50%)", "Contributed to Kyoto Autumn Journey Fund.", "🎯"));
-            historyRepo.save(new CompanionHistory(alexComp, "LEVEL_UP", 0, "Level Up! Reached Level 4", "Nova evolved to a higher astral resonance.", "⭐"));
             historyRepo.save(new CompanionHistory(alexComp, "INTERACTION", 0, "Bonds of Warmth", "Shared a gentle moment of care and affection.", "💖"));
 
             // Companion 2: Maya's Rabbit "Luna" (if distinct partner exists)
             if (!user1.getId().equals(user2.getId())) {
-                int mayaXp = 310;
-                int mayaLevel = CompanionLevelCalculator.calculateLevelFromXp(mayaXp);
+                int mayaXp = 0;
+                int mayaLevel = 1;
                 Companion mayaComp = Companion.builder()
                         .user(user2)
                         .animalType(AnimalType.RABBIT)
@@ -94,13 +104,10 @@ public class CompanionSeedInitializer implements CommandLineRunner {
                 mayaComp = companionRepo.save(mayaComp);
 
                 historyRepo.save(new CompanionHistory(mayaComp, "ANIMAL_CHOSEN", 0, "Bond Forged", "Luna the Rabbit joined your journey.", "🐇"));
-                historyRepo.save(new CompanionHistory(mayaComp, "HABIT_COMPLETED", 25, "Evening Reading Done", "Knowledge shared with Luna under moonlight.", "📖"));
-                historyRepo.save(new CompanionHistory(mayaComp, "HABIT_STREAK", 50, "5-Day Streak Bonus", "Luna is hopping with sheer joy!", "✨"));
-                historyRepo.save(new CompanionHistory(mayaComp, "LEVEL_UP", 0, "Level Up! Reached Level 3", "Luna radiated with celestial starlight.", "⭐"));
-                historyRepo.save(new CompanionHistory(mayaComp, "GOAL_MILESTONE", 50, "Milestone Reached (75%)", "Half Marathon training goal advanced.", "🏃‍♀️"));
+                historyRepo.save(new CompanionHistory(mayaComp, "INTERACTION", 0, "Bonds of Warmth", "Shared a gentle moment of care and affection.", "💖"));
             }
 
-            log.info("Companion seeding successfully completed.");
+            log.info("Companion seeding successfully completed with 0 XP.");
         } catch (Exception e) {
             log.error("Failed to seed companions: {}", e.getMessage(), e);
         }
