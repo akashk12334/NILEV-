@@ -558,11 +558,26 @@ function HabitForm({
             />
           </div>
           <div>
-            <label className={labelCls}>
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3 text-pink-400" /> End Date
-              </span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3 text-pink-400" /> End Date
+                </span>
+              </label>
+              {!isEndless && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEndless(true);
+                    setEndDate("");
+                  }}
+                  className="text-[11px] font-semibold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-violet-950/40"
+                >
+                  <InfinityIcon className="h-3 w-3" />
+                  <span>Make Endless</span>
+                </button>
+              )}
+            </div>
             {isEndless ? (
               <button
                 type="button"
@@ -581,25 +596,13 @@ function HabitForm({
                 <span className="text-[10px] text-slate-500 group-hover:text-violet-300 transition-colors">Set date →</span>
               </button>
             ) : (
-              <div className="relative">
-                <input
-                  type="date"
-                  value={endDate}
-                  min={startDate || undefined}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className={`${inputCls} pr-20`}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEndless(true);
-                    setEndDate("");
-                  }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-[10px] font-semibold text-violet-400 bg-violet-950/60 border border-violet-500/30 rounded-md hover:bg-violet-900/60 transition-colors"
-                >
-                  Make Endless ∞
-                </button>
-              </div>
+              <input
+                type="date"
+                value={endDate}
+                min={startDate || undefined}
+                onChange={(e) => setEndDate(e.target.value)}
+                className={inputCls}
+              />
             )}
           </div>
         </div>
