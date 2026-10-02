@@ -324,15 +324,15 @@ export const CompanionHeroCard: React.FC<CompanionHeroCardProps> = ({
                   >
                     {isLimitReached
                       ? "All 5 daily bonds completed ✨"
-                      : `${dailyRemaining}/5 daily bonds left (+5 XP)`}
+                      : `${dailyRemaining}/5 daily bonds left (+2 XP)`}
                   </span>
                 </div>
 
                 <span className="text-xs text-slate-400 flex items-center pt-0.5">
                   <Smile className="w-3.5 h-3.5 mr-1 text-pink-400" />
                   {isLimitReached
-                    ? `${companion.name} is deeply cherished today! Complete habits with your partner (+15 XP each) to level up further.`
-                    : "Affection boosts mood & happiness (+5 XP per bond, 5 max daily)"}
+                    ? `${companion.name} is deeply cherished today! Complete habits with your partner (+3 XP each) to level up further.`
+                    : "Affection boosts mood & happiness (+2 XP per bond, 5 max daily)"}
                 </span>
               </div>
             ) : (

@@ -159,20 +159,20 @@ public class HabitServiceImpl implements HabitService {
             // Award Companion XP
             companionService.addXp(
                     userId,
-                    25,
+                    3,
                     "HABIT_COMPLETED",
                     "Habit Completed",
-                    "Completed \"" + habit.getName() + "\" for today (+25 XP)",
+                    "Completed \"" + habit.getName() + "\" for today (+3 XP)",
                     habit.getIcon() != null && !habit.getIcon().isBlank() ? habit.getIcon() : "✨"
             );
 
             if (response.getCurrentStreak() > 1 && (response.getCurrentStreak() % 3 == 0 || response.getCurrentStreak() == 7)) {
                 companionService.addXp(
                         userId,
-                        50,
+                        3,
                         "HABIT_STREAK",
                         response.getCurrentStreak() + "-Day Streak! 🔥",
-                        "Maintained a " + response.getCurrentStreak() + "-day streak on \"" + habit.getName() + "\" (+50 XP Bonus)",
+                        "Maintained a " + response.getCurrentStreak() + "-day streak on \"" + habit.getName() + "\" (+3 XP Bonus)",
                         "🔥"
                 );
             }

@@ -516,7 +516,7 @@ export const HabitsPage: React.FC = () => {
         toast({
           type: "success",
           title: `Habit complete! ${habit.icon}`,
-          description: `Streak is now ${updated.currentStreak} day${updated.currentStreak !== 1 ? "s" : ""}. +15 XP 🎉`,
+          description: `Streak is now ${updated.currentStreak} day${updated.currentStreak !== 1 ? "s" : ""}. +3 XP 🎉`,
         });
       }
     } catch (err: unknown) {

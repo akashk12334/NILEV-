@@ -191,7 +191,7 @@ export const DashboardPage: React.FC = () => {
         toast({ type: "info", title: "Habit unmarked", description: `'${name}' uncompleted for today.` });
       } else {
         await complete(habitId);
-        toast({ type: "success", title: "Habit done! 🌟", description: `+15 XP earned for '${name}'. Keep the streak alive!` });
+        toast({ type: "success", title: "Habit done! 🌟", description: `+3 XP earned for '${name}'. Keep the streak alive!` });
       }
     } catch {
       toast({ type: "error", title: "Update failed", description: "Could not update habit. Please try again." });
@@ -378,7 +378,7 @@ export const DashboardPage: React.FC = () => {
             icon={<Zap className="h-5 w-5" />}
             accentColor="emerald"
             progress={myCompanion?.levelProgressPercentage || 20}
-            trend={{ value: myCompanion ? `Lv. ${myCompanion.level}` : "+15 XP per habit", direction: "up" }}
+            trend={{ value: myCompanion ? `Lv. ${myCompanion.level}` : "+3 XP per habit", direction: "up" }}
           />
           <StatCard
             title="Goals Progress"

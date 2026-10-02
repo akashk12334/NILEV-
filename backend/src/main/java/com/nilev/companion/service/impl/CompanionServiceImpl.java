@@ -162,7 +162,7 @@ public class CompanionServiceImpl implements CompanionService {
 
         if (todayInteractions >= 5) {
             throw new NilevApiException(
-                    "Daily bonding limit reached (5/5)! " + companion.getName() + " is well-nurtured for today. Complete your habits (+15 XP) to level up further ✨",
+                    "Daily bonding limit reached (5/5)! " + companion.getName() + " is well-nurtured for today. Complete your habits (+3 XP) to level up further ✨",
                     HttpStatus.BAD_REQUEST,
                     "DAILY_BOND_LIMIT_REACHED"
             );
@@ -174,7 +174,7 @@ public class CompanionServiceImpl implements CompanionService {
         companion.setDailyInteractionsCount(todayInteractions + 1);
 
         int oldLevel = companion.getLevel();
-        int newXp = companion.getXp() + 5;
+        int newXp = companion.getXp() + 2;
         int newLevel = CompanionLevelCalculator.calculateLevelFromXp(newXp);
         companion.setXp(newXp);
 
@@ -190,7 +190,7 @@ public class CompanionServiceImpl implements CompanionService {
             historyRepo.save(new CompanionHistory(
                     companion,
                     "LEVEL_UP",
-                    5,
+                    2,
                     companion.getName() + " reached Level " + newLevel + "! ✨",
                     "Evolved to Level " + newLevel + " through steady sanctuary dedication.",
                     "🌟"
@@ -202,7 +202,7 @@ public class CompanionServiceImpl implements CompanionService {
             historyRepo.save(new CompanionHistory(
                     companion,
                     "INTERACTION",
-                    5,
+                    2,
                     "Affection & Care",
                     "Shared a loving moment with " + companion.getName(),
                     "💖"

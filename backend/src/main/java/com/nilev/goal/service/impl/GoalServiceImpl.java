@@ -268,10 +268,10 @@ public class GoalServiceImpl implements GoalService {
             // Award companion XP for reaching goal milestone
             companionService.addXp(
                     actorId,
-                    50,
+                    2,
                     "GOAL_MILESTONE",
                     milestone + "% Goal Milestone 🎯",
-                    "Progressed \"" + goal.getTitle() + "\" to " + milestone + "% (+50 XP)",
+                    "Progressed \"" + goal.getTitle() + "\" to " + milestone + "% (+2 XP)",
                     goal.getIcon() != null ? goal.getIcon() : "🎯"
             );
         } catch (Exception e) {
@@ -309,10 +309,10 @@ public class GoalServiceImpl implements GoalService {
             // Award companion XP for completing goal
             companionService.addXp(
                     actorId,
-                    150,
+                    3,
                     "GOAL_COMPLETED",
                     "Goal Accomplished! 🏆",
-                    "Achieved 100% on \"" + goal.getTitle() + "\" (+150 XP Bonus)",
+                    "Achieved 100% on \"" + goal.getTitle() + "\" (+3 XP Bonus)",
                     "🏅"
             );
         } catch (Exception e) {

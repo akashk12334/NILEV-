@@ -270,7 +270,7 @@ export const CompanionPage: React.FC = () => {
                   <span>Habit Completed</span>
                 </div>
                 <p className="text-slate-400 text-[11px]">
-                  Each daily check-in grants <strong className="text-emerald-400">+25 XP</strong> to nourish your companion.
+                  Each daily check-in grants <strong className="text-emerald-400">+3 XP</strong> to nourish your companion.
                 </p>
               </div>
 
@@ -280,7 +280,7 @@ export const CompanionPage: React.FC = () => {
                   <span>Habit Streak</span>
                 </div>
                 <p className="text-slate-400 text-[11px]">
-                  Unbroken streaks unlock bonus <strong className="text-amber-300">+50 XP</strong> and elevate your companion's mood.
+                  Unbroken streaks unlock bonus <strong className="text-amber-300">+3 XP</strong> and elevate your companion's mood.
                 </p>
               </div>
 
@@ -290,7 +290,7 @@ export const CompanionPage: React.FC = () => {
                   <span>Goal Milestones</span>
                 </div>
                 <p className="text-slate-400 text-[11px]">
-                  Reaching 25%, 50%, 75% yields <strong className="text-cyan-300">+50 XP</strong>; completion awards <strong className="text-pink-300">+150 XP</strong>.
+                  Reaching 25%, 50%, 75% yields <strong className="text-cyan-300">+2 XP</strong>; completion awards <strong className="text-pink-300">+3 XP</strong>.
                 </p>
               </div>
 
@@ -300,7 +300,7 @@ export const CompanionPage: React.FC = () => {
                   <span>Daily Bonding</span>
                 </div>
                 <p className="text-slate-400 text-[11px]">
-                  Nurturing and interacting replenishes energy, restores happiness, and lifts mood.
+                  Nurturing and interacting replenishes energy, restores happiness, and grants <strong className="text-pink-300">+2 XP</strong>.
                 </p>
               </div>
             </div>
