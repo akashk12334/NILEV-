@@ -1,0 +1,16 @@
+name: Keep Render Backend Awake
+
+on:
+  schedule:
+    # Run every 10 minutes to prevent Render free-tier sleep (sleep threshold is 15 minutes)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping NILEV Backend
+        run: |
+          echo "Pinging NILEV backend on Render to keep instance warm..."
+          curl -s -f -m 30 https://nilev.onrender.com/api/v1/auth/ping || echo "Ping dispatched"

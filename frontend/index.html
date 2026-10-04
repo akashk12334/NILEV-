@@ -6,6 +6,15 @@
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NILEV — Private Companion & Habit Platform</title>
+    <!-- Preconnect & Pre-warm Backend -->
+    <link rel="dns-prefetch" href="https://nilev.onrender.com" />
+    <link rel="preconnect" href="https://nilev.onrender.com" crossorigin />
+    <script>
+      // Background pre-warming of backend container immediately when page starts loading
+      try {
+        fetch("https://nilev.onrender.com/api/v1/auth/ping", { mode: "no-cors", cache: "no-store" }).catch(() => {});
+      } catch (e) {}
+    </script>
     <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

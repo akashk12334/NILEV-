@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: nilev-backend
+  main:
+    lazy-initialization: true
   servlet:
     multipart:
       enabled: true
