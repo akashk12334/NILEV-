@@ -66,9 +66,9 @@ export const AnalyticsPage: React.FC = () => {
   }, [fetchAnalytics]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pb-16 pt-2 px-4 sm:px-6 lg:px-8">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-16">
       {/* ── Top Header & Sanctuary Branding ──────────────────────── */}
-      <div className="max-w-7xl mx-auto mb-8">
+      <div className="mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-slate-800/80">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
@@ -180,7 +180,7 @@ export const AnalyticsPage: React.FC = () => {
       </div>
 
       {/* ── Main Dashboard Content ─────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="space-y-8">
         {isLoading && !data ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (

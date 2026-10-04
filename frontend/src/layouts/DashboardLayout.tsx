@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Outlet } from "react-router-dom";
 import { Header, Sidebar, Footer, MobileNav } from "../components/layout";
+import { cn } from "../utils/cn";
 
 export const DashboardLayout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = React.useState<boolean>(() => {
@@ -57,7 +58,12 @@ export const DashboardLayout: React.FC = () => {
       />
 
       {/* Main Area */}
-      <div className="flex flex-1 flex-col min-w-0">
+      <div
+        className={cn(
+          "flex flex-1 flex-col min-w-0 transition-all duration-300",
+          isCollapsed ? "md:pl-[72px]" : "md:pl-64"
+        )}
+      >
         <Header onMobileMenuToggle={() => setIsMobileDrawerOpen(true)} />
 
         {isServerConnecting && (

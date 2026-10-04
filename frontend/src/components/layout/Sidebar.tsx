@@ -153,16 +153,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [location.pathname]);
 
   const sidebarContent = (
-    <div className="flex h-full flex-col justify-between overflow-y-auto select-none">
-      {/* Top Section */}
-      <div>
-        {/* Brand Header */}
-        <div
-          className={cn(
-            "flex h-16 items-center px-4 border-b border-[rgba(147,130,255,0.1)] transition-all",
-            isCollapsed ? "justify-center" : "justify-between"
-          )}
-        >
+    <div className="flex h-full flex-col select-none">
+      {/* Top Brand Header */}
+      <div
+        className={cn(
+          "flex h-16 shrink-0 items-center px-4 border-b border-[rgba(147,130,255,0.1)] transition-all",
+          isCollapsed ? "justify-center" : "justify-between"
+        )}
+      >
           <NavLink to={ROUTES.DASHBOARD} className="flex items-center space-x-3 group">
             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-pink-500 shadow-lg shadow-violet-950/60 ring-1 ring-white/20 group-hover:shadow-violet-600/30 transition-all duration-300">
               <Heart className="h-5 w-5 fill-white text-white transform group-hover:scale-110 transition-transform" />
@@ -212,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation Section */}
-        <div className="p-3 space-y-1">
+        <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-none">
           {!isCollapsed && (
             <p className="px-3 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Platform
@@ -267,10 +265,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             );
           })}
         </div>
-      </div>
 
       {/* Bottom Profile & Partner Status Section */}
-      <div className="p-3 border-t border-[rgba(147,130,255,0.1)] space-y-2">
+      <div className="shrink-0 p-3 border-t border-[rgba(147,130,255,0.1)] space-y-2 bg-[rgba(8,11,24,0.95)]">
         {/* Partner Connection Card */}
         {!isCollapsed && (
           <div className="rounded-xl border border-[rgba(147,130,255,0.12)] bg-[rgba(15,20,38,0.6)] p-2.5 backdrop-blur-md">
@@ -359,7 +356,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Desktop / Tablet Sidebar */}
       <aside
         className={cn(
-          "hidden md:flex h-screen sticky top-0 flex-col z-30 border-r border-[rgba(147,130,255,0.12)] bg-[rgba(8,11,24,0.85)] backdrop-blur-2xl transition-all duration-300",
+          "hidden md:flex h-screen fixed left-0 top-0 bottom-0 flex-col z-30 border-r border-[rgba(147,130,255,0.12)] bg-[rgba(8,11,24,0.95)] backdrop-blur-2xl transition-all duration-300",
           isCollapsed ? "w-[72px]" : "w-64"
         )}
       >
