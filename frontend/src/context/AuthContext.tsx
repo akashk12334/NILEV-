@@ -37,13 +37,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Listen for global auth session expiry from api client
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setToken(null);
+      setUser(null);
+    };
+    window.addEventListener("nilev:auth:unauthorized", handleUnauthorized);
+    return () => {
+      window.removeEventListener("nilev:auth:unauthorized", handleUnauthorized);
+    };
+  }, []);
+
   // Synchronize on mount and validate token with backend if present
   useEffect(() => {
     let isMounted = true;
 
     async function initAuth() {
       const savedToken = storageService.getToken();
-      const savedUser = storageService.getUser();
 
       if (!savedToken) {
         if (isMounted) {
@@ -58,43 +69,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const freshUser = await authService.getMe();
         if (isMounted) {
+          // Token might have been refreshed transparently by apiClient
+          const currentToken = storageService.getToken() || savedToken;
           setUser(freshUser);
-          setToken(savedToken);
+          setToken(currentToken);
         }
       } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status === 401 || status === 403) {
-          // Attempt refresh token exchange if available
-          const refreshToken = storageService.getRefreshToken();
-          if (refreshToken) {
-            try {
-              const refreshed = await authService.refresh();
-              if (isMounted) {
-                setToken(refreshed.accessToken || refreshed.token || null);
-                setUser(refreshed.user);
-              }
-              return;
-            } catch {
-              // Refresh failed, clean up
-              storageService.clearSession();
-              if (isMounted) {
-                setToken(null);
-                setUser(null);
-              }
-            }
-          } else {
-            storageService.clearSession();
-            if (isMounted) {
-              setToken(null);
-              setUser(null);
-            }
-          }
-        } else {
-          // If offline/network error, keep the saved user from storage
-          if (isMounted && savedUser) {
-            setUser(savedUser);
-            setToken(savedToken);
-          }
+        // If apiClient successfully refreshed the token, read from storage
+        const currentToken = storageService.getToken();
+        const currentUser = storageService.getUser();
+        if (isMounted && currentToken && currentUser) {
+          setToken(currentToken);
+          setUser(currentUser);
+        } else if (isMounted) {
+          setToken(null);
+          setUser(null);
         }
       } finally {
         if (isMounted) {
