@@ -4,6 +4,8 @@ export const ENDPOINTS = {
     REGISTER: "/auth/register",
     FORGOT_PASSWORD: "/auth/forgot-password",
     RESET_PASSWORD: "/auth/reset-password",
+    ADMIN_PASSWORD_RESET_REQUEST: "/auth/reset-password/admin-request",
+    CHANGE_PASSWORD: "/auth/change-password",
     RESET_PASSWORD_RECOVERY_CODE: "/auth/reset-password/recovery-code",
     RECOVERY_CODE_GENERATE: "/auth/recovery-code/generate",
     RECOVERY_CODE_STATUS: "/auth/recovery-code/status",

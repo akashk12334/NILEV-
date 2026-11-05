@@ -1,8 +1,10 @@
 import { apiClient } from "../api/client";
 import { ENDPOINTS } from "../api/endpoints";
 import type {
+  AdminPasswordResetRequest,
   ApiResponse,
   AuthResponse,
+  ChangePasswordRequest,
   ForgotPasswordRequest,
   LoginRequest,
   RecoveryCodeResponse,
@@ -116,6 +118,22 @@ export const authService = {
       data
     );
     return res.data.message || "Password has been successfully reset. You may now log in with your new password.";
+  },
+
+  async changePassword(data: ChangePasswordRequest): Promise<string> {
+    const res = await apiClient.post<ApiResponse<void>>(
+      ENDPOINTS.AUTH.CHANGE_PASSWORD,
+      data
+    );
+    return res.data.message || "Password changed successfully.";
+  },
+
+  async requestAdminPasswordReset(data: AdminPasswordResetRequest): Promise<string> {
+    const res = await apiClient.post<ApiResponse<void>>(
+      ENDPOINTS.AUTH.ADMIN_PASSWORD_RESET_REQUEST,
+      data
+    );
+    return res.data.message || "Password reset request submitted successfully.";
   },
 
   async resetPasswordWithRecoveryCode(data: ResetPasswordWithRecoveryCodeRequest): Promise<string> {

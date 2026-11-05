@@ -12,14 +12,13 @@ import {
   User as UserIcon,
   HeartHandshake,
   KeyRound,
-  ShieldCheck,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { usePartner } from "../hooks/usePartner";
 import { userService } from "../services/user.service";
 import { authService } from "../services/auth.service";
-import { RecoveryCodeModal } from "../components/auth/RecoveryCodeModal";
-import type { RecoveryCodeStatusResponse } from "../types";
 import {
   Card,
   CardHeader,
@@ -62,46 +61,80 @@ export const SettingsPage: React.FC = () => {
   const [deleteConfirmation, setDeleteConfirmation] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  // Recovery code state
-  const [recoveryStatus, setRecoveryStatus] = useState<RecoveryCodeStatusResponse | null>(null);
-  const [isLoadingRecovery, setIsLoadingRecovery] = useState<boolean>(true);
-  const [isGeneratingRecovery, setIsGeneratingRecovery] = useState<boolean>(false);
-  const [generatedRecoveryCode, setGeneratedRecoveryCode] = useState<string | null>(null);
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  useEffect(() => {
-    async function loadRecoveryStatus() {
-      try {
-        const status = await authService.getRecoveryCodeStatus();
-        setRecoveryStatus(status);
-      } catch {
-        // Silently ignore if unauthenticated or network failure
-      } finally {
-        setIsLoadingRecovery(false);
-      }
-    }
-    loadRecoveryStatus();
-  }, []);
-
-  const handleGenerateRecoveryCode = async () => {
-    setIsGeneratingRecovery(true);
-    try {
-      const res = await authService.generateRecoveryCode();
-      setGeneratedRecoveryCode(res.recoveryCode);
-      const updatedStatus = await authService.getRecoveryCodeStatus();
-      setRecoveryStatus(updatedStatus);
-      toast({
-        type: "success",
-        title: "Recovery Code Ready",
-        description: "Please save your recovery code safely.",
-      });
-    } catch {
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword) {
       toast({
         type: "error",
-        title: "Generation Failed",
-        description: "Could not generate recovery code. Please try again.",
+        title: "Current Password Required",
+        description: "Please enter your current password to continue.",
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast({
+        type: "error",
+        title: "Password Too Short",
+        description: "New password must be at least 6 characters long.",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        type: "error",
+        title: "Passwords Do Not Match",
+        description: "New password and confirmation must match.",
+      });
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      toast({
+        type: "error",
+        title: "Password Unchanged",
+        description: "New password cannot be identical to your current password.",
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await authService.changePassword({ currentPassword, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast({
+        type: "success",
+        title: "Password Updated",
+        description: "Your sanctuary password has been successfully updated.",
+      });
+    } catch (err: unknown) {
+      const resp = (err as {
+        response?: {
+          status?: number;
+          data?: { message?: string; error?: string };
+        };
+      })?.response;
+
+      const msg = resp?.data?.message || resp?.data?.error || "Could not update password. Please check your current password.";
+      toast({
+        type: "error",
+        title: "Update Failed",
+        description: msg,
       });
     } finally {
-      setIsGeneratingRecovery(false);
+      setIsChangingPassword(false);
     }
   };
 
@@ -562,78 +595,117 @@ export const SettingsPage: React.FC = () => {
         </form>
       </Card>
 
-      {/* ── 3. ACCOUNT RECOVERY (RECOVERY CODE) ────────────────────── */}
+      {/* ── 3. SECURITY & PASSWORD ───────────────────────────────────── */}
       <Card className="border-violet-500/20 bg-gradient-to-br from-violet-950/15 via-[#0c1022]/90 to-slate-900/40 backdrop-blur-xl shadow-2xl overflow-hidden">
         <CardHeader className="border-b border-slate-800/80 pb-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-400">
-                <KeyRound className="h-5 w-5" />
-              </div>
-              <div>
-                <CardTitle className="text-base text-white font-bold tracking-tight">
-                  Account Recovery Code
-                </CardTitle>
-                <CardDescription className="text-xs text-slate-400">
-                  Alternative offline password reset mechanism that does not depend on email delivery.
-                </CardDescription>
-              </div>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-400">
+              <KeyRound className="h-5 w-5" />
             </div>
-            {recoveryStatus?.hasRecoveryCode ? (
-              <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 bg-emerald-500/10">
-                Active Code
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="border-amber-500/40 text-amber-400 bg-amber-500/10">
-                Not Generated
-              </Badge>
-            )}
+            <div>
+              <CardTitle className="text-base text-white font-bold tracking-tight">
+                Security & Password
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-400">
+                Update your account password using your current password verification.
+              </CardDescription>
+            </div>
           </div>
         </CardHeader>
 
-        <CardContent className="pt-5 space-y-4">
-          <div className="rounded-xl border border-slate-800 bg-[#080b18]/60 p-4 text-xs text-slate-300 space-y-2">
-            <div className="flex items-center gap-2 text-violet-400 font-semibold">
-              <ShieldCheck className="h-4 w-4" />
-              <span>How NILEV Recovery Codes Work</span>
-            </div>
-            <p className="text-slate-400 leading-relaxed">
-              A recovery code is a cryptographically generated master key that allows you to regain access to your sanctuary instantly. Only a secure SHA-256 hash is stored on our servers.
-            </p>
-            {recoveryStatus?.hasRecoveryCode && recoveryStatus.createdAt && (
-              <p className="text-emerald-400/90 text-[11px] pt-1 border-t border-slate-800/80">
-                ✓ You have an active recovery code generated on{" "}
-                <span className="font-medium text-emerald-300">
-                  {new Date(recoveryStatus.createdAt).toLocaleDateString(undefined, {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>.
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between pt-1 gap-4">
-            <div className="text-xs text-slate-400">
-              {recoveryStatus?.hasRecoveryCode
-                ? "Regenerating will invalidate your previously stored recovery code immediately."
-                : "Generate a recovery code now and store it in your password manager or secure offline notes."}
+        <form onSubmit={handleChangePassword}>
+          <CardContent className="pt-5 space-y-4">
+            {/* Current Password */}
+            <div className="space-y-1.5">
+              <label htmlFor="settings-current-password" className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+                Current Password
+              </label>
+              <div className="relative">
+                <Input
+                  id="settings-current-password"
+                  type={showCurrentPassword ? "text" : "password"}
+                  placeholder="Enter your current password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="bg-[#0b0e1e]/80 border-slate-700/60 focus:border-violet-500 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* New Password */}
+              <div className="space-y-1.5">
+                <label htmlFor="settings-new-password" className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+                  New Password
+                </label>
+                <div className="relative">
+                  <Input
+                    id="settings-new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="At least 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="bg-[#0b0e1e]/80 border-slate-700/60 focus:border-violet-500 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  >
+                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm New Password */}
+              <div className="space-y-1.5">
+                <label htmlFor="settings-confirm-password" className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <Input
+                    id="settings-confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Repeat new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="bg-[#0b0e1e]/80 border-slate-700/60 focus:border-violet-500 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+
+          <CardFooter className="border-t border-slate-800/80 pt-4 pb-4 flex items-center justify-between">
+            <span className="text-xs text-slate-500">
+              Must be at least 6 characters
+            </span>
             <Button
-              type="button"
-              variant={recoveryStatus?.hasRecoveryCode ? "secondary" : "default"}
+              type="submit"
+              variant="default"
               size="sm"
-              isLoading={isGeneratingRecovery || isLoadingRecovery}
-              onClick={handleGenerateRecoveryCode}
-              className="px-4 font-semibold shrink-0"
+              isLoading={isChangingPassword}
+              disabled={!currentPassword || !newPassword || !confirmPassword || isChangingPassword}
+              className="px-5 font-semibold"
             >
-              <KeyRound className="h-3.5 w-3.5 mr-1.5" />
-              {recoveryStatus?.hasRecoveryCode ? "Regenerate Code" : "Generate Code"}
+              {isChangingPassword ? "Updating Password..." : "Update Password"}
             </Button>
-          </div>
-        </CardContent>
+          </CardFooter>
+        </form>
       </Card>
 
       {/* ── 4. DANGER ZONE ───────────────────────────────────────────── */}
@@ -746,17 +818,6 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
       </Modal>
-
-      {/* Recovery Code Generation Display Modal */}
-      {generatedRecoveryCode && (
-        <RecoveryCodeModal
-          isOpen={Boolean(generatedRecoveryCode)}
-          recoveryCode={generatedRecoveryCode}
-          onClose={() => setGeneratedRecoveryCode(null)}
-          title="Account Recovery Code"
-          subtitle="Your new recovery code has been generated. Please store it safely. It will not be shown again."
-        />
-      )}
     </div>
   );
 };

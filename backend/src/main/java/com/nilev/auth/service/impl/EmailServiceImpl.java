@@ -20,14 +20,25 @@ public class EmailServiceImpl implements EmailService {
     private final Optional<JavaMailSender> mailSender;
     private final String frontendUrl;
     private final String mailFrom;
+    private final boolean emailEnabled;
 
+    @Autowired
     public EmailServiceImpl(
             @Autowired(required = false) JavaMailSender mailSender,
             @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl,
-            @Value("${spring.mail.from:${spring.mail.username:}}") String mailFrom) {
+            @Value("${spring.mail.from:${spring.mail.username:}}") String mailFrom,
+            @Value("${app.mail.enabled:false}") boolean emailEnabled) {
         this.mailSender = Optional.ofNullable(mailSender);
         this.frontendUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
         this.mailFrom = mailFrom;
+        this.emailEnabled = emailEnabled;
+    }
+
+    public EmailServiceImpl(
+            JavaMailSender mailSender,
+            String frontendUrl,
+            String mailFrom) {
+        this(mailSender, frontendUrl, mailFrom, true);
     }
 
     @Override
@@ -35,6 +46,11 @@ public class EmailServiceImpl implements EmailService {
         String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
         String greetingName = (recipientName != null && !recipientName.isBlank()) ? recipientName : "there";
         String maskedEmail = maskEmail(recipientEmail);
+
+        if (!emailEnabled) {
+            log.info("Email delivery is currently disabled. Password reset request logged for [{}].", maskedEmail);
+            return;
+        }
 
         if (mailSender.isEmpty()) {
             log.warn("Password reset requested for [{}] but SMTP is not configured: JavaMailSender bean is not active. Configure SMTP_HOST, SMTP_PORT, SMTP_USERNAME, and SMTP_PASSWORD in Render environment variables.", maskedEmail);

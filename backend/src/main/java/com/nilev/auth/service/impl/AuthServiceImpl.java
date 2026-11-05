@@ -1,6 +1,8 @@
 package com.nilev.auth.service.impl;
 
+import com.nilev.auth.dto.AdminPasswordResetRequest;
 import com.nilev.auth.dto.AuthResponse;
+import com.nilev.auth.dto.ChangePasswordRequest;
 import com.nilev.auth.dto.ForgotPasswordRequest;
 import com.nilev.auth.dto.LoginRequest;
 import com.nilev.auth.dto.RecoveryCodeResponse;
@@ -341,6 +343,61 @@ public class AuthServiceImpl implements AuthService {
             return new RecoveryCodeStatusResponse(true, existingOpt.get().getCreatedAt());
         }
         return new RecoveryCodeStatusResponse(false, null);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new BadRequestException("Current password does not match");
+        }
+
+        String newPassword = request.getNewPassword();
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new BadRequestException("New password must be at least 6 characters long");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new BadRequestException("New password cannot be the same as current password");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setPasswordChangedAt(Instant.now());
+        userRepository.save(user);
+
+        // Invalidate any active password reset tokens
+        passwordResetTokenRepository.deleteByUser(user);
+
+        log.info("Password successfully updated for user ID: {}", userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void requestAdminPasswordReset(AdminPasswordResetRequest request) {
+        String email = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : "";
+        String maskedEmail = maskEmail(email);
+
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
+        if (userOpt.isPresent()) {
+            log.warn("ADMIN PASSWORD RESET REQUESTED for user ID: {} [{}]. Request recorded for administrator review.",
+                    userOpt.get().getId(), maskedEmail);
+        } else {
+            log.warn("ADMIN PASSWORD RESET REQUESTED for non-existent email [{}]. No user found.", maskedEmail);
+        }
+    }
+
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return "unknown";
+        String[] parts = email.split("@", 2);
+        String name = parts[0];
+        String domain = parts[1];
+        if (name.length() <= 2) {
+            return name.charAt(0) + "*@" + domain;
+        }
+        return name.substring(0, 2) + "***@" + domain;
     }
 
     private String hashToken(String rawToken) {

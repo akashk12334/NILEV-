@@ -58,6 +58,16 @@ export interface RecoveryCodeStatusResponse {
   createdAt?: string | null;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface AdminPasswordResetRequest {
+  email: string;
+  newPassword: string;
+}
+
 export interface AuthState {
   user: UserResponse | null;
   token: string | null;

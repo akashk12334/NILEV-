@@ -1,6 +1,8 @@
 package com.nilev.auth.service;
 
+import com.nilev.auth.dto.AdminPasswordResetRequest;
 import com.nilev.auth.dto.AuthResponse;
+import com.nilev.auth.dto.ChangePasswordRequest;
 import com.nilev.auth.dto.ForgotPasswordRequest;
 import com.nilev.auth.dto.LoginRequest;
 import com.nilev.auth.dto.RecoveryCodeResponse;
@@ -31,4 +33,8 @@ public interface AuthService {
     RecoveryCodeResponse generateRecoveryCode(Long userId);
 
     RecoveryCodeStatusResponse getRecoveryCodeStatus(Long userId);
+
+    void changePassword(Long userId, ChangePasswordRequest request);
+
+    void requestAdminPasswordReset(AdminPasswordResetRequest request);
 }

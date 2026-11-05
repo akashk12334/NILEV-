@@ -73,6 +73,21 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("Password has been successfully reset. You may now log in with your new password."));
     }
 
+    @PostMapping("/reset-password/admin-request")
+    public ResponseEntity<ApiResponse<Void>> requestAdminPasswordReset(
+            @Valid @RequestBody AdminPasswordResetRequest request) {
+        authService.requestAdminPasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.ok("Password reset request submitted successfully. An administrator will verify and assist with your account recovery."));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal UserPrincipal currentUser,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(currentUser.getId(), request);
+        return ResponseEntity.ok(ApiResponse.ok("Password changed successfully."));
+    }
+
     @PostMapping("/reset-password/recovery-code")
     public ResponseEntity<ApiResponse<Void>> resetPasswordWithRecoveryCode(
             @Valid @RequestBody ResetPasswordWithRecoveryCodeRequest request) {

@@ -101,7 +101,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 path.endsWith("/auth/register") ||
                 path.endsWith("/auth/forgot-password") ||
                 path.endsWith("/auth/reset-password") ||
+                path.endsWith("/auth/reset-password/admin-request") ||
                 path.endsWith("/auth/reset-password/recovery-code") ||
+                path.endsWith("/auth/change-password") ||
                 path.endsWith("/auth/recovery-code/generate") ||
                 path.endsWith("/partners/invite");
     }
