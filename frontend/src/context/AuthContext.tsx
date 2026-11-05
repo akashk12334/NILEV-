@@ -35,7 +35,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [token, setToken] = useState<string | null>(() =>
     storageService.getToken()
   );
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // Optimistic auth: If we already have a cached token and user profile, do not block the UI
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    const savedToken = storageService.getToken();
+    const savedUser = storageService.getUser();
+    if (savedToken && savedUser) {
+      return false; // Optimistically authenticated
+    }
+    if (!savedToken) {
+      return false; // Unauthenticated, proceed directly
+    }
+    return true; // Token exists but profile is missing from storage
+  });
 
   // Listen for global auth session expiry from api client
   useEffect(() => {
@@ -49,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  // Synchronize on mount and validate token with backend if present
+  // Synchronize on mount and validate token with backend asynchronously
   useEffect(() => {
     let isMounted = true;
 
@@ -65,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      // If we have a saved token, verify / fetch latest profile
+      // If we have a saved token, verify / fetch latest profile in the background
       try {
         const freshUser = await authService.getMe();
         if (isMounted) {
@@ -73,17 +84,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const currentToken = storageService.getToken() || savedToken;
           setUser(freshUser);
           setToken(currentToken);
+          storageService.setUser(freshUser, true);
         }
-      } catch (err: unknown) {
-        // If apiClient successfully refreshed the token, read from storage
-        const currentToken = storageService.getToken();
-        const currentUser = storageService.getUser();
-        if (isMounted && currentToken && currentUser) {
-          setToken(currentToken);
-          setUser(currentUser);
-        } else if (isMounted) {
-          setToken(null);
-          setUser(null);
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status === 401 || status === 403) {
+          // Token is strictly invalid or expired and refresh failed
+          storageService.clearSession();
+          if (isMounted) {
+            setToken(null);
+            setUser(null);
+          }
+        } else {
+          // Cold-start, network glitch, timeout, 502/503/504:
+          // Keep optimistic cached session intact so the user is not abruptly logged out
+          const cachedToken = storageService.getToken();
+          const cachedUser = storageService.getUser();
+          if (isMounted && cachedToken && cachedUser) {
+            setToken(cachedToken);
+            setUser(cachedUser);
+          } else if (isMounted && !cachedToken) {
+            setToken(null);
+            setUser(null);
+          }
         }
       } finally {
         if (isMounted) {

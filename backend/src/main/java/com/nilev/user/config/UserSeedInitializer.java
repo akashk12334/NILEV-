@@ -38,20 +38,7 @@ public class UserSeedInitializer implements CommandLineRunner {
     public void run(String... args) {
         try {
             if (userRepository.count() > 0) {
-                // Clear XP for all existing users to ensure everyone's XP is reset
-                java.util.List<User> existingUsers = userRepository.findAll();
-                boolean updated = false;
-                for (User u : existingUsers) {
-                    if (u.getXp() > 0) {
-                        u.setXp(0);
-                        u.setLevel(1);
-                        userRepository.save(u);
-                        updated = true;
-                    }
-                }
-                if (updated) {
-                    log.info("Reset XP to 0 and level to 1 for all existing users.");
-                }
+                log.debug("Database already contains users. Skipping UserSeedInitializer.");
                 return;
             }
 

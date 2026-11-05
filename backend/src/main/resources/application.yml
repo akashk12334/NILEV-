@@ -5,7 +5,7 @@ spring:
   application:
     name: nilev-backend
   main:
-    lazy-initialization: true
+    lazy-initialization: false
   servlet:
     multipart:
       enabled: true
@@ -16,6 +16,15 @@ spring:
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: NilevHikariPool
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 600000
+      keepalive-time: 30000
+      initialization-fail-timeout: -1
   jpa:
     hibernate:
       ddl-auto: update
@@ -23,7 +32,9 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
+        temp:
+          use_jdbc_metadata_defaults: false
   mail:
     host: ${SMTP_HOST:}
     port: ${SMTP_PORT:587}

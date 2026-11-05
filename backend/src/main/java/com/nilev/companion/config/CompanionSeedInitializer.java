@@ -42,20 +42,7 @@ public class CompanionSeedInitializer implements CommandLineRunner {
     public void run(String... args) {
         try {
             if (companionRepo.count() > 0) {
-                // Clear XP for all existing companions to ensure everyone's XP is reset
-                List<Companion> existingCompanions = companionRepo.findAll();
-                boolean updated = false;
-                for (Companion c : existingCompanions) {
-                    if (c.getXp() > 0 || c.getLevel() > 1) {
-                        c.setXp(0);
-                        c.setLevel(1);
-                        companionRepo.save(c);
-                        updated = true;
-                    }
-                }
-                if (updated) {
-                    log.info("Reset XP to 0 and level to 1 for all existing companions.");
-                }
+                log.debug("Database already contains companions. Skipping CompanionSeedInitializer.");
                 return;
             }
 

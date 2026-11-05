@@ -13,8 +13,36 @@ export const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 60000, // 60s timeout for Render free-tier cold starts
+  timeout: 25000, // 25s timeout for cold starts and API requests
 });
+
+// In-flight GET request deduplication map
+const inFlightGetRequests = new Map<string, Promise<any>>();
+
+// Wrap apiClient.request to deduplicate concurrent identical GET requests
+const rawRequest = apiClient.request.bind(apiClient);
+
+apiClient.request = (function (config: any): Promise<any> {
+  const method = (config?.method || "get").toUpperCase();
+  if (method === "GET") {
+    const token = storageService.getToken() || "";
+    const key = `GET:${config?.baseURL || ""}:${config?.url || ""}:${JSON.stringify(config?.params || {})}:${token}`;
+
+    const inFlight = inFlightGetRequests.get(key);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const promise = rawRequest(config).finally(() => {
+      inFlightGetRequests.delete(key);
+    });
+
+    inFlightGetRequests.set(key, promise);
+    return promise;
+  }
+
+  return rawRequest(config);
+}) as any;
 
 // Request interceptor: Attach JWT token if available & allow browser to set FormData boundary
 apiClient.interceptors.request.use(
@@ -82,7 +110,7 @@ apiClient.interceptors.response.use(
       error.response.status === 504;
 
     const retryCount = originalRequest._retryCount || 0;
-    if (isNetworkOrTimeout && !isAuthEndpoint && retryCount < 2) {
+    if (isNetworkOrTimeout && !isAuthEndpoint && retryCount < 1) {
       originalRequest._retryCount = retryCount + 1;
 
       // Notify UI that server may be waking up
@@ -94,8 +122,8 @@ apiClient.interceptors.response.use(
         );
       }
 
-      // Progressive delay: 1.5s on first retry, 3s on second retry
-      const delay = (retryCount + 1) * 1500;
+      // Single retry attempt with a 2s delay
+      const delay = 2000;
       await new Promise((resolve) => setTimeout(resolve, delay));
       return apiClient(originalRequest);
     }
