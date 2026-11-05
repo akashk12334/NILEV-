@@ -101,7 +101,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <span>Admin-Assisted Sanctuary Protection</span>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              To safeguard your couple sanctuary against unauthorized account takeover, password resets are verified through administrator assistance before credentials update.
+              To safeguard your couple sanctuary against unauthorized account takeover, password resets are verified through administrator assistance. Your new password will become active as soon as sanctuary administration approves your request.
             </p>
           </div>
 

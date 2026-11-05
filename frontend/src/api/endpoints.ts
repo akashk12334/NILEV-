@@ -14,6 +14,12 @@ export const ENDPOINTS = {
     ME: "/auth/me",
     PING: "/auth/ping",
   },
+  ADMIN: {
+    PASSWORD_RESETS: "/admin/password-resets",
+    PASSWORD_RESETS_ALL: "/admin/password-resets/all",
+    PASSWORD_RESET_APPROVE: (id: number | string) => `/admin/password-resets/${id}/approve`,
+    PASSWORD_RESET_REJECT: (id: number | string) => `/admin/password-resets/${id}/reject`,
+  },
   USERS: {
     ME: "/users/me",
     BY_ID: (id: number | string) => `/users/${id}`,

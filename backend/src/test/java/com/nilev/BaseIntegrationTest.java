@@ -3,6 +3,7 @@ package com.nilev;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nilev.activity.repository.ActivityReactionRepository;
 import com.nilev.activity.repository.ActivityRepository;
+import com.nilev.auth.repository.PasswordResetRequestRepository;
 import com.nilev.auth.repository.PasswordResetTokenRepository;
 import com.nilev.auth.repository.RecoveryCodeRepository;
 import com.nilev.companion.repository.CompanionHistoryRepository;
@@ -90,6 +91,9 @@ public abstract class BaseIntegrationTest {
     protected PasswordResetTokenRepository passwordResetTokenRepo;
 
     @Autowired
+    protected PasswordResetRequestRepository passwordResetRequestRepo;
+
+    @Autowired
     protected RecoveryCodeRepository recoveryCodeRepo;
 
     protected void cleanDatabase() {
@@ -106,6 +110,7 @@ public abstract class BaseIntegrationTest {
         partnerInvitationRepo.deleteAll();
         partnerConnectionRepo.deleteAll();
         passwordResetTokenRepo.deleteAll();
+        passwordResetRequestRepo.deleteAll();
         recoveryCodeRepo.deleteAll();
         userRepo.deleteAll();
     }

@@ -11,8 +11,10 @@ import com.nilev.auth.dto.RegisterRequest;
 import com.nilev.auth.dto.ResetPasswordRequest;
 import com.nilev.auth.dto.ResetPasswordWithRecoveryCodeRequest;
 import com.nilev.auth.dto.UserResponse;
+import com.nilev.auth.entity.PasswordResetRequest;
 import com.nilev.auth.entity.PasswordResetToken;
 import com.nilev.auth.entity.RecoveryCode;
+import com.nilev.auth.repository.PasswordResetRequestRepository;
 import com.nilev.auth.repository.PasswordResetTokenRepository;
 import com.nilev.auth.repository.RecoveryCodeRepository;
 import com.nilev.auth.service.AuthService;
@@ -35,6 +37,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -46,6 +49,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PasswordResetRequestRepository passwordResetRequestRepository;
     private final RecoveryCodeRepository recoveryCodeRepository;
     private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
@@ -54,12 +58,14 @@ public class AuthServiceImpl implements AuthService {
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider tokenProvider,
                            PasswordResetTokenRepository passwordResetTokenRepository,
+                           PasswordResetRequestRepository passwordResetRequestRepository,
                            RecoveryCodeRepository recoveryCodeRepository,
                            EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.passwordResetRequestRepository = passwordResetRequestRepository;
         this.recoveryCodeRepository = recoveryCodeRepository;
         this.emailService = emailService;
     }
@@ -375,17 +381,42 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public void requestAdminPasswordReset(AdminPasswordResetRequest request) {
         String email = request.getEmail() != null ? request.getEmail().toLowerCase().trim() : "";
         String maskedEmail = maskEmail(email);
 
         Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
         if (userOpt.isPresent()) {
-            log.warn("ADMIN PASSWORD RESET REQUESTED for user ID: {} [{}]. Request recorded for administrator review.",
-                    userOpt.get().getId(), maskedEmail);
+            User user = userOpt.get();
+
+            // 1. Immediately hash the proposed new password using BCrypt (never store plain-text)
+            String proposedHash = passwordEncoder.encode(request.getNewPassword());
+
+            // 2. Supersede any earlier PENDING requests for this user (only 1 active pending request)
+            List<PasswordResetRequest> existingPending = passwordResetRequestRepository.findByUserAndStatus(user, "PENDING");
+            for (PasswordResetRequest existing : existingPending) {
+                existing.setStatus("SUPERSEDED");
+                existing.setProcessedAt(Instant.now());
+                existing.setAdminNotes("Superseded by a newer password reset request");
+                passwordResetRequestRepository.save(existing);
+            }
+
+            // 3. Persist the new request with 24-hour expiration window
+            PasswordResetRequest resetRequest = PasswordResetRequest.builder()
+                    .user(user)
+                    .proposedPasswordHash(proposedHash)
+                    .status("PENDING")
+                    .createdAt(Instant.now())
+                    .expiresAt(Instant.now().plus(Duration.ofHours(24)))
+                    .build();
+
+            passwordResetRequestRepository.save(resetRequest);
+
+            log.info("Admin password reset request recorded for user ID: {} [{}]. Status: PENDING, Expires: 24h.",
+                    user.getId(), maskedEmail);
         } else {
-            log.warn("ADMIN PASSWORD RESET REQUESTED for non-existent email [{}]. No user found.", maskedEmail);
+            log.warn("Admin password reset request for non-existent email [{}]. No request recorded.", maskedEmail);
         }
     }
 

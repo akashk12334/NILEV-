@@ -65,6 +65,11 @@ public class SecurityConfig {
                                 "/uploads/**",
                                 "/error"
                         ).permitAll()
+                        // Admin endpoints
+                        .requestMatchers(
+                                "/api/admin/**",
+                                "/api/v1/admin/**"
+                        ).hasRole("ADMIN")
                         // Protected /me endpoint and everything else
                         .requestMatchers("/api/auth/me", "/api/v1/auth/me").authenticated()
                         .anyRequest().authenticated()

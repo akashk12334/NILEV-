@@ -68,6 +68,28 @@ export interface AdminPasswordResetRequest {
   newPassword: string;
 }
 
+export interface AdminPasswordResetResponse {
+  id: number;
+  userId: number;
+  userEmail: string;
+  userName: string;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+  processedAt?: string | null;
+  processedByAdminId?: number | null;
+  adminNotes?: string | null;
+}
+
+export interface AdminApprovalRequest {
+  verificationNote: string;
+  confirmedIdentity: boolean;
+}
+
+export interface AdminRejectionRequest {
+  reason?: string;
+}
+
 export interface AuthState {
   user: UserResponse | null;
   token: string | null;

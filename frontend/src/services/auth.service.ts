@@ -1,7 +1,10 @@
 import { apiClient } from "../api/client";
 import { ENDPOINTS } from "../api/endpoints";
 import type {
+  AdminApprovalRequest,
   AdminPasswordResetRequest,
+  AdminPasswordResetResponse,
+  AdminRejectionRequest,
   ApiResponse,
   AuthResponse,
   ChangePasswordRequest,
@@ -134,6 +137,29 @@ export const authService = {
       data
     );
     return res.data.message || "Password reset request submitted successfully.";
+  },
+
+  async getAdminPendingPasswordResets(): Promise<AdminPasswordResetResponse[]> {
+    const res = await apiClient.get<ApiResponse<AdminPasswordResetResponse[]>>(
+      ENDPOINTS.ADMIN.PASSWORD_RESETS
+    );
+    return res.data.data;
+  },
+
+  async approveAdminPasswordReset(id: number | string, data: AdminApprovalRequest): Promise<string> {
+    const res = await apiClient.post<ApiResponse<void>>(
+      ENDPOINTS.ADMIN.PASSWORD_RESET_APPROVE(id),
+      data
+    );
+    return res.data.message || "Password reset approved successfully.";
+  },
+
+  async rejectAdminPasswordReset(id: number | string, data?: AdminRejectionRequest): Promise<string> {
+    const res = await apiClient.post<ApiResponse<void>>(
+      ENDPOINTS.ADMIN.PASSWORD_RESET_REJECT(id),
+      data || {}
+    );
+    return res.data.message || "Password reset rejected.";
   },
 
   async resetPasswordWithRecoveryCode(data: ResetPasswordWithRecoveryCodeRequest): Promise<string> {

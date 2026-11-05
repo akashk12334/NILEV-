@@ -64,9 +64,15 @@ public class UserPrincipal implements UserDetails {
         return passwordChangedAt;
     }
 
+    public boolean isAdmin() {
+        return "ADMIN".equalsIgnoreCase(role) || "ROLE_ADMIN".equalsIgnoreCase(role);
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
+        String cleanRole = (role != null && !role.isBlank()) ? role.trim().toUpperCase() : "USER";
+        String authority = cleanRole.startsWith("ROLE_") ? cleanRole : "ROLE_" + cleanRole;
+        return Collections.singletonList(new SimpleGrantedAuthority(authority));
     }
 
     @Override
