@@ -40,6 +40,22 @@ export interface AuthResponse {
   refreshToken?: string;
   tokenType: string;
   user: UserResponse;
+  recoveryCode?: string;
+}
+
+export interface ResetPasswordWithRecoveryCodeRequest {
+  email: string;
+  recoveryCode: string;
+  newPassword: string;
+}
+
+export interface RecoveryCodeResponse {
+  recoveryCode: string;
+}
+
+export interface RecoveryCodeStatusResponse {
+  hasRecoveryCode: boolean;
+  createdAt?: string | null;
 }
 
 export interface AuthState {

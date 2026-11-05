@@ -3,8 +3,11 @@ package com.nilev.auth.service;
 import com.nilev.auth.dto.AuthResponse;
 import com.nilev.auth.dto.ForgotPasswordRequest;
 import com.nilev.auth.dto.LoginRequest;
+import com.nilev.auth.dto.RecoveryCodeResponse;
+import com.nilev.auth.dto.RecoveryCodeStatusResponse;
 import com.nilev.auth.dto.RegisterRequest;
 import com.nilev.auth.dto.ResetPasswordRequest;
+import com.nilev.auth.dto.ResetPasswordWithRecoveryCodeRequest;
 import com.nilev.auth.dto.UserResponse;
 
 public interface AuthService {
@@ -22,4 +25,10 @@ public interface AuthService {
     void forgotPassword(ForgotPasswordRequest request);
 
     void resetPassword(ResetPasswordRequest request);
+
+    void resetPasswordWithRecoveryCode(ResetPasswordWithRecoveryCodeRequest request);
+
+    RecoveryCodeResponse generateRecoveryCode(Long userId);
+
+    RecoveryCodeStatusResponse getRecoveryCodeStatus(Long userId);
 }

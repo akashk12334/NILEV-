@@ -5,8 +5,11 @@ import type {
   AuthResponse,
   ForgotPasswordRequest,
   LoginRequest,
+  RecoveryCodeResponse,
+  RecoveryCodeStatusResponse,
   RegisterRequest,
   ResetPasswordRequest,
+  ResetPasswordWithRecoveryCodeRequest,
   UserResponse,
 } from "../types";
 import { storageService } from "./storage.service";
@@ -113,5 +116,27 @@ export const authService = {
       data
     );
     return res.data.message || "Password has been successfully reset. You may now log in with your new password.";
+  },
+
+  async resetPasswordWithRecoveryCode(data: ResetPasswordWithRecoveryCodeRequest): Promise<string> {
+    const res = await apiClient.post<ApiResponse<void>>(
+      ENDPOINTS.AUTH.RESET_PASSWORD_RECOVERY_CODE,
+      data
+    );
+    return res.data.message || "Password has been successfully reset. You may now log in with your new password.";
+  },
+
+  async generateRecoveryCode(): Promise<RecoveryCodeResponse> {
+    const res = await apiClient.post<ApiResponse<RecoveryCodeResponse>>(
+      ENDPOINTS.AUTH.RECOVERY_CODE_GENERATE
+    );
+    return res.data.data;
+  },
+
+  async getRecoveryCodeStatus(): Promise<RecoveryCodeStatusResponse> {
+    const res = await apiClient.get<ApiResponse<RecoveryCodeStatusResponse>>(
+      ENDPOINTS.AUTH.RECOVERY_CODE_STATUS
+    );
+    return res.data.data;
   },
 };

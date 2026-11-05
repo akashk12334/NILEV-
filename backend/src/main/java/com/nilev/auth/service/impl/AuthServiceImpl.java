@@ -3,13 +3,19 @@ package com.nilev.auth.service.impl;
 import com.nilev.auth.dto.AuthResponse;
 import com.nilev.auth.dto.ForgotPasswordRequest;
 import com.nilev.auth.dto.LoginRequest;
+import com.nilev.auth.dto.RecoveryCodeResponse;
+import com.nilev.auth.dto.RecoveryCodeStatusResponse;
 import com.nilev.auth.dto.RegisterRequest;
 import com.nilev.auth.dto.ResetPasswordRequest;
+import com.nilev.auth.dto.ResetPasswordWithRecoveryCodeRequest;
 import com.nilev.auth.dto.UserResponse;
 import com.nilev.auth.entity.PasswordResetToken;
+import com.nilev.auth.entity.RecoveryCode;
 import com.nilev.auth.repository.PasswordResetTokenRepository;
+import com.nilev.auth.repository.RecoveryCodeRepository;
 import com.nilev.auth.service.AuthService;
 import com.nilev.auth.service.EmailService;
+import com.nilev.auth.util.RecoveryCodeUtils;
 import com.nilev.exception.*;
 import com.nilev.security.JwtTokenProvider;
 import com.nilev.user.entity.User;
@@ -38,6 +44,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final RecoveryCodeRepository recoveryCodeRepository;
     private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -45,11 +52,13 @@ public class AuthServiceImpl implements AuthService {
                            PasswordEncoder passwordEncoder,
                            JwtTokenProvider tokenProvider,
                            PasswordResetTokenRepository passwordResetTokenRepository,
+                           RecoveryCodeRepository recoveryCodeRepository,
                            EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.recoveryCodeRepository = recoveryCodeRepository;
         this.emailService = emailService;
     }
 
@@ -75,6 +84,12 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
+        // Generate initial recovery code for newly registered account
+        String rawRecoveryCode = RecoveryCodeUtils.generateCode();
+        String codeHash = RecoveryCodeUtils.hashCode(RecoveryCodeUtils.normalizeCode(rawRecoveryCode));
+        RecoveryCode recoveryCode = new RecoveryCode(null, savedUser, codeHash, null, Instant.now());
+        recoveryCodeRepository.save(recoveryCode);
+
         String accessToken = tokenProvider.generateAccessToken(savedUser.getId(), savedUser.getEmail());
         String refreshToken = tokenProvider.generateRefreshToken(savedUser.getId(), savedUser.getEmail());
 
@@ -84,6 +99,7 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(refreshToken)
                 .tokenType("Bearer")
                 .user(toUserResponse(savedUser))
+                .recoveryCode(rawRecoveryCode)
                 .build();
     }
 
@@ -244,6 +260,87 @@ public class AuthServiceImpl implements AuthService {
 
         // Clean up any remaining tokens for this user
         passwordResetTokenRepository.deleteByUser(user);
+    }
+
+    @Override
+    @Transactional
+    public void resetPasswordWithRecoveryCode(ResetPasswordWithRecoveryCodeRequest request) {
+        String normalizedEmail = request.getEmail().toLowerCase().trim();
+        String normalizedCode = RecoveryCodeUtils.normalizeCode(request.getRecoveryCode());
+        String codeHash = RecoveryCodeUtils.hashCode(normalizedCode);
+
+        String newPassword = request.getNewPassword();
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new BadRequestException("Password must be at least 6 characters long");
+        }
+
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
+        if (userOpt.isEmpty() || !userOpt.get().isActive()) {
+            throw new BadRequestException("Invalid email or recovery code");
+        }
+
+        User user = userOpt.get();
+        Optional<RecoveryCode> codeOpt = recoveryCodeRepository.findByUser(user);
+        if (codeOpt.isEmpty()) {
+            throw new BadRequestException("Invalid email or recovery code");
+        }
+
+        RecoveryCode recoveryCode = codeOpt.get();
+        if (recoveryCode.getUsedAt() != null || !recoveryCode.getCodeHash().equals(codeHash)) {
+            throw new BadRequestException("Invalid email or recovery code");
+        }
+
+        // Update password hash and passwordChangedAt
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setPasswordChangedAt(Instant.now());
+        userRepository.save(user);
+
+        // Invalidate recovery code (single-use)
+        recoveryCode.setUsedAt(Instant.now());
+        recoveryCodeRepository.save(recoveryCode);
+
+        // Clean up any remaining email reset tokens for this user
+        passwordResetTokenRepository.deleteByUser(user);
+
+        log.info("Password successfully reset via recovery code for user ID: {}", user.getId());
+    }
+
+    @Override
+    @Transactional
+    public RecoveryCodeResponse generateRecoveryCode(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        String rawCode = RecoveryCodeUtils.generateCode();
+        String codeHash = RecoveryCodeUtils.hashCode(RecoveryCodeUtils.normalizeCode(rawCode));
+
+        Optional<RecoveryCode> existingOpt = recoveryCodeRepository.findByUser(user);
+        if (existingOpt.isPresent()) {
+            RecoveryCode existing = existingOpt.get();
+            existing.setCodeHash(codeHash);
+            existing.setUsedAt(null);
+            existing.setCreatedAt(Instant.now());
+            recoveryCodeRepository.save(existing);
+        } else {
+            RecoveryCode newCode = new RecoveryCode(null, user, codeHash, null, Instant.now());
+            recoveryCodeRepository.save(newCode);
+        }
+
+        log.info("Recovery code generated for user ID: {}", userId);
+        return new RecoveryCodeResponse(rawCode);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RecoveryCodeStatusResponse getRecoveryCodeStatus(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        Optional<RecoveryCode> existingOpt = recoveryCodeRepository.findByUser(user);
+        if (existingOpt.isPresent() && existingOpt.get().getUsedAt() == null) {
+            return new RecoveryCodeStatusResponse(true, existingOpt.get().getCreatedAt());
+        }
+        return new RecoveryCodeStatusResponse(false, null);
     }
 
     private String hashToken(String rawToken) {

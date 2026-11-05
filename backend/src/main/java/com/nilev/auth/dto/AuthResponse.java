@@ -6,6 +6,7 @@ public class AuthResponse {
     private String refreshToken;
     private String tokenType = "Bearer";
     private UserResponse user;
+    private String recoveryCode;
 
     public AuthResponse() {
     }
@@ -15,6 +16,22 @@ public class AuthResponse {
         this.refreshToken = refreshToken;
         this.tokenType = tokenType != null ? tokenType : "Bearer";
         this.user = user;
+    }
+
+    public AuthResponse(String accessToken, String refreshToken, String tokenType, UserResponse user, String recoveryCode) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.tokenType = tokenType != null ? tokenType : "Bearer";
+        this.user = user;
+        this.recoveryCode = recoveryCode;
+    }
+
+    public String getRecoveryCode() {
+        return recoveryCode;
+    }
+
+    public void setRecoveryCode(String recoveryCode) {
+        this.recoveryCode = recoveryCode;
     }
 
     public String getAccessToken() {
@@ -69,6 +86,7 @@ public class AuthResponse {
         private String refreshToken;
         private String tokenType = "Bearer";
         private UserResponse user;
+        private String recoveryCode;
 
         public Builder accessToken(String accessToken) {
             this.accessToken = accessToken;
@@ -95,8 +113,13 @@ public class AuthResponse {
             return this;
         }
 
+        public Builder recoveryCode(String recoveryCode) {
+            this.recoveryCode = recoveryCode;
+            return this;
+        }
+
         public AuthResponse build() {
-            return new AuthResponse(accessToken, refreshToken, tokenType, user);
+            return new AuthResponse(accessToken, refreshToken, tokenType, user, recoveryCode);
         }
     }
 }

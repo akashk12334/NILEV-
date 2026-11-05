@@ -73,6 +73,27 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.ok("Password has been successfully reset. You may now log in with your new password."));
     }
 
+    @PostMapping("/reset-password/recovery-code")
+    public ResponseEntity<ApiResponse<Void>> resetPasswordWithRecoveryCode(
+            @Valid @RequestBody ResetPasswordWithRecoveryCodeRequest request) {
+        authService.resetPasswordWithRecoveryCode(request);
+        return ResponseEntity.ok(ApiResponse.ok("Password has been successfully reset. You may now log in with your new password."));
+    }
+
+    @PostMapping("/recovery-code/generate")
+    public ResponseEntity<ApiResponse<RecoveryCodeResponse>> generateRecoveryCode(
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        RecoveryCodeResponse response = authService.generateRecoveryCode(currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Recovery code generated successfully. Save this code in a secure location.", response));
+    }
+
+    @GetMapping("/recovery-code/status")
+    public ResponseEntity<ApiResponse<RecoveryCodeStatusResponse>> getRecoveryCodeStatus(
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        RecoveryCodeStatusResponse response = authService.getRecoveryCodeStatus(currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> me(
             @AuthenticationPrincipal UserPrincipal currentUser) {

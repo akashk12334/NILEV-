@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle, ArrowRight } from "lucide-react";
 import { ROUTES } from "../constants";
 import { useAuth } from "../hooks/useAuth";
+import { RecoveryCodeModal } from "../components/auth/RecoveryCodeModal";
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatedRecoveryCode, setGeneratedRecoveryCode] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,12 +29,16 @@ export const RegisterPage: React.FC = () => {
     }
 
     try {
-      await register({
+      const authData = await register({
         name: name.trim(),
         email: email.trim(),
         password,
       });
-      navigate(ROUTES.DASHBOARD, { replace: true });
+      if (authData?.recoveryCode) {
+        setGeneratedRecoveryCode(authData.recoveryCode);
+      } else {
+        navigate(ROUTES.DASHBOARD, { replace: true });
+      }
     } catch (err: unknown) {
       const resp = (err as {
         response?: {
@@ -227,6 +233,17 @@ export const RegisterPage: React.FC = () => {
           Sign in
         </Link>
       </div>
+
+      {/* Recovery Code Initial Display Modal */}
+      {generatedRecoveryCode && (
+        <RecoveryCodeModal
+          isOpen={Boolean(generatedRecoveryCode)}
+          recoveryCode={generatedRecoveryCode}
+          onClose={() => navigate(ROUTES.DASHBOARD, { replace: true })}
+          title="Account Created! Save Your Recovery Code"
+          subtitle="Your NILEV sanctuary account is ready. Save this one-time recovery code now so you can recover your password even without email delivery."
+        />
+      )}
     </div>
   );
 };

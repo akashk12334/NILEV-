@@ -11,10 +11,15 @@ import {
   ShieldAlert,
   User as UserIcon,
   HeartHandshake,
+  KeyRound,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { usePartner } from "../hooks/usePartner";
 import { userService } from "../services/user.service";
+import { authService } from "../services/auth.service";
+import { RecoveryCodeModal } from "../components/auth/RecoveryCodeModal";
+import type { RecoveryCodeStatusResponse } from "../types";
 import {
   Card,
   CardHeader,
@@ -56,6 +61,49 @@ export const SettingsPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Recovery code state
+  const [recoveryStatus, setRecoveryStatus] = useState<RecoveryCodeStatusResponse | null>(null);
+  const [isLoadingRecovery, setIsLoadingRecovery] = useState<boolean>(true);
+  const [isGeneratingRecovery, setIsGeneratingRecovery] = useState<boolean>(false);
+  const [generatedRecoveryCode, setGeneratedRecoveryCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadRecoveryStatus() {
+      try {
+        const status = await authService.getRecoveryCodeStatus();
+        setRecoveryStatus(status);
+      } catch {
+        // Silently ignore if unauthenticated or network failure
+      } finally {
+        setIsLoadingRecovery(false);
+      }
+    }
+    loadRecoveryStatus();
+  }, []);
+
+  const handleGenerateRecoveryCode = async () => {
+    setIsGeneratingRecovery(true);
+    try {
+      const res = await authService.generateRecoveryCode();
+      setGeneratedRecoveryCode(res.recoveryCode);
+      const updatedStatus = await authService.getRecoveryCodeStatus();
+      setRecoveryStatus(updatedStatus);
+      toast({
+        type: "success",
+        title: "Recovery Code Ready",
+        description: "Please save your recovery code safely.",
+      });
+    } catch {
+      toast({
+        type: "error",
+        title: "Generation Failed",
+        description: "Could not generate recovery code. Please try again.",
+      });
+    } finally {
+      setIsGeneratingRecovery(false);
+    }
+  };
 
   // Sync state with current user
   useEffect(() => {
@@ -514,7 +562,81 @@ export const SettingsPage: React.FC = () => {
         </form>
       </Card>
 
-      {/* ── 3. DANGER ZONE ───────────────────────────────────────────── */}
+      {/* ── 3. ACCOUNT RECOVERY (RECOVERY CODE) ────────────────────── */}
+      <Card className="border-violet-500/20 bg-gradient-to-br from-violet-950/15 via-[#0c1022]/90 to-slate-900/40 backdrop-blur-xl shadow-2xl overflow-hidden">
+        <CardHeader className="border-b border-slate-800/80 pb-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-400">
+                <KeyRound className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-base text-white font-bold tracking-tight">
+                  Account Recovery Code
+                </CardTitle>
+                <CardDescription className="text-xs text-slate-400">
+                  Alternative offline password reset mechanism that does not depend on email delivery.
+                </CardDescription>
+              </div>
+            </div>
+            {recoveryStatus?.hasRecoveryCode ? (
+              <Badge variant="outline" className="border-emerald-500/40 text-emerald-400 bg-emerald-500/10">
+                Active Code
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="border-amber-500/40 text-amber-400 bg-amber-500/10">
+                Not Generated
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-5 space-y-4">
+          <div className="rounded-xl border border-slate-800 bg-[#080b18]/60 p-4 text-xs text-slate-300 space-y-2">
+            <div className="flex items-center gap-2 text-violet-400 font-semibold">
+              <ShieldCheck className="h-4 w-4" />
+              <span>How NILEV Recovery Codes Work</span>
+            </div>
+            <p className="text-slate-400 leading-relaxed">
+              A recovery code is a cryptographically generated master key that allows you to regain access to your sanctuary instantly. Only a secure SHA-256 hash is stored on our servers.
+            </p>
+            {recoveryStatus?.hasRecoveryCode && recoveryStatus.createdAt && (
+              <p className="text-emerald-400/90 text-[11px] pt-1 border-t border-slate-800/80">
+                ✓ You have an active recovery code generated on{" "}
+                <span className="font-medium text-emerald-300">
+                  {new Date(recoveryStatus.createdAt).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>.
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-1 gap-4">
+            <div className="text-xs text-slate-400">
+              {recoveryStatus?.hasRecoveryCode
+                ? "Regenerating will invalidate your previously stored recovery code immediately."
+                : "Generate a recovery code now and store it in your password manager or secure offline notes."}
+            </div>
+
+            <Button
+              type="button"
+              variant={recoveryStatus?.hasRecoveryCode ? "secondary" : "default"}
+              size="sm"
+              isLoading={isGeneratingRecovery || isLoadingRecovery}
+              onClick={handleGenerateRecoveryCode}
+              className="px-4 font-semibold shrink-0"
+            >
+              <KeyRound className="h-3.5 w-3.5 mr-1.5" />
+              {recoveryStatus?.hasRecoveryCode ? "Regenerate Code" : "Generate Code"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── 4. DANGER ZONE ───────────────────────────────────────────── */}
       <Card className="border-rose-500/30 bg-gradient-to-br from-rose-950/20 via-[#0d1020]/90 to-rose-950/10 backdrop-blur-xl shadow-2xl overflow-hidden">
         <CardHeader className="border-b border-rose-500/20 pb-4">
           <div className="flex items-center gap-2.5">
@@ -624,6 +746,17 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Recovery Code Generation Display Modal */}
+      {generatedRecoveryCode && (
+        <RecoveryCodeModal
+          isOpen={Boolean(generatedRecoveryCode)}
+          recoveryCode={generatedRecoveryCode}
+          onClose={() => setGeneratedRecoveryCode(null)}
+          title="Account Recovery Code"
+          subtitle="Your new recovery code has been generated. Please store it safely. It will not be shown again."
+        />
+      )}
     </div>
   );
 };
