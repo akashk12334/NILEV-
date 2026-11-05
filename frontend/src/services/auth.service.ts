@@ -3,8 +3,10 @@ import { ENDPOINTS } from "../api/endpoints";
 import type {
   ApiResponse,
   AuthResponse,
+  ForgotPasswordRequest,
   LoginRequest,
   RegisterRequest,
+  ResetPasswordRequest,
   UserResponse,
 } from "../types";
 import { storageService } from "./storage.service";
@@ -95,5 +97,21 @@ export const authService = {
   async ping(): Promise<string> {
     const res = await apiClient.get<ApiResponse<string>>(ENDPOINTS.AUTH.PING);
     return res.data.data;
+  },
+
+  async forgotPassword(data: ForgotPasswordRequest): Promise<string> {
+    const res = await apiClient.post<ApiResponse<void>>(
+      ENDPOINTS.AUTH.FORGOT_PASSWORD,
+      data
+    );
+    return res.data.message || "If an account with that email exists, password reset instructions have been sent.";
+  },
+
+  async resetPassword(data: ResetPasswordRequest): Promise<string> {
+    const res = await apiClient.post<ApiResponse<void>>(
+      ENDPOINTS.AUTH.RESET_PASSWORD,
+      data
+    );
+    return res.data.message || "Password has been successfully reset. You may now log in with your new password.";
   },
 };

@@ -59,6 +59,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     throw new AccountInactiveException("Account is inactive or disabled");
                 }
 
+                if (userDetails instanceof UserPrincipal principal) {
+                    if (principal.getPasswordChangedAt() != null && claims.getIssuedAt() != null) {
+                        if (claims.getIssuedAt().toInstant().isBefore(principal.getPasswordChangedAt().minusSeconds(1))) {
+                            throw new TokenExpiredException("Session invalidated due to password change. Please log in again.");
+                        }
+                    }
+                }
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

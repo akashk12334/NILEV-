@@ -147,7 +147,7 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Remember Me Toggle */}
+        {/* Remember Me Toggle & Forgot Password Link */}
         <div className="flex items-center justify-between pt-1">
           <label className="flex items-center gap-2.5 cursor-pointer select-none">
             <input
@@ -162,6 +162,13 @@ export const LoginPage: React.FC = () => {
               Remember me
             </span>
           </label>
+          <Link
+            to={ROUTES.FORGOT_PASSWORD}
+            id="link-to-forgot-password"
+            className="text-xs font-medium text-violet-400 hover:text-violet-300 transition-colors underline-offset-4 hover:underline"
+          >
+            Forgot Password?
+          </Link>
         </div>
 
         {/* Submit Button */}

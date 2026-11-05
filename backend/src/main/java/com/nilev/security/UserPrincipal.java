@@ -16,14 +16,20 @@ public class UserPrincipal implements UserDetails {
     private final String passwordHash;
     private final boolean active;
     private final String role;
+    private final java.time.Instant passwordChangedAt;
 
     public UserPrincipal(Long id, String name, String email, String passwordHash, boolean active, String role) {
+        this(id, name, email, passwordHash, active, role, null);
+    }
+
+    public UserPrincipal(Long id, String name, String email, String passwordHash, boolean active, String role, java.time.Instant passwordChangedAt) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.passwordHash = passwordHash;
         this.active = active;
         this.role = role != null ? role : "USER";
+        this.passwordChangedAt = passwordChangedAt;
     }
 
     public static UserPrincipal create(User user) {
@@ -33,7 +39,8 @@ public class UserPrincipal implements UserDetails {
                 user.getEmail(),
                 user.getPasswordHash(),
                 user.isActive(),
-                user.getRole()
+                user.getRole(),
+                user.getPasswordChangedAt()
         );
     }
 
@@ -51,6 +58,10 @@ public class UserPrincipal implements UserDetails {
 
     public String getRole() {
         return role;
+    }
+
+    public java.time.Instant getPasswordChangedAt() {
+        return passwordChangedAt;
     }
 
     @Override

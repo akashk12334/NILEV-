@@ -99,6 +99,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         if (path == null) return false;
         return path.endsWith("/auth/login") ||
                 path.endsWith("/auth/register") ||
+                path.endsWith("/auth/forgot-password") ||
+                path.endsWith("/auth/reset-password") ||
                 path.endsWith("/partners/invite");
     }
 

@@ -17,6 +17,9 @@ public class User extends BaseEntity {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
+    @Column(name = "password_changed_at")
+    private Instant passwordChangedAt;
+
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
@@ -95,6 +98,14 @@ public class User extends BaseEntity {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public Instant getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    public void setPasswordChangedAt(Instant passwordChangedAt) {
+        this.passwordChangedAt = passwordChangedAt;
     }
 
     public String getAvatarUrl() {
@@ -320,15 +331,22 @@ public class User extends BaseEntity {
         }
 
         private String nickname;
+        private Instant passwordChangedAt;
 
         public Builder nickname(String nickname) {
             this.nickname = nickname;
             return this;
         }
 
+        public Builder passwordChangedAt(Instant passwordChangedAt) {
+            this.passwordChangedAt = passwordChangedAt;
+            return this;
+        }
+
         public User build() {
             User user = new User(name, email, passwordHash, avatarUrl, lastLoginAt, active, role);
             user.setNickname(this.nickname);
+            user.setPasswordChangedAt(this.passwordChangedAt);
             user.setXp(this.xp);
             user.setLevel(this.level);
             user.setStreak(this.streak);
