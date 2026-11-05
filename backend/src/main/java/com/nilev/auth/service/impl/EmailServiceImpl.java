@@ -24,7 +24,7 @@ public class EmailServiceImpl implements EmailService {
     public EmailServiceImpl(
             @Autowired(required = false) JavaMailSender mailSender,
             @Value("${app.frontend-url:http://localhost:5173}") String frontendUrl,
-            @Value("${spring.mail.username:}") String mailFrom) {
+            @Value("${spring.mail.from:${spring.mail.username:}}") String mailFrom) {
         this.mailSender = Optional.ofNullable(mailSender);
         this.frontendUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
         this.mailFrom = mailFrom;
@@ -34,29 +34,45 @@ public class EmailServiceImpl implements EmailService {
     public void sendPasswordResetEmail(String recipientEmail, String recipientName, String rawToken) {
         String resetLink = frontendUrl + "/reset-password?token=" + rawToken;
         String greetingName = (recipientName != null && !recipientName.isBlank()) ? recipientName : "there";
+        String maskedEmail = maskEmail(recipientEmail);
 
-        if (mailSender.isPresent() && mailFrom != null && !mailFrom.isBlank()) {
-            try {
-                MimeMessage message = mailSender.get().createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-                helper.setFrom(mailFrom);
-                helper.setTo(recipientEmail);
-                helper.setSubject("NILEV — Password Reset Request");
-
-                String htmlContent = buildResetEmailHtml(greetingName, resetLink);
-                helper.setText(htmlContent, true);
-
-                mailSender.get().send(message);
-                log.info("Password reset email successfully sent to [{}]", recipientEmail);
-                return;
-            } catch (Exception e) {
-                log.warn("Failed to dispatch password reset email via SMTP to [{}]: {}", recipientEmail, e.getMessage());
-            }
+        if (mailSender.isEmpty()) {
+            log.warn("Password reset requested for [{}] but SMTP is not configured: JavaMailSender bean is not active. Configure SMTP_HOST, SMTP_PORT, SMTP_USERNAME, and SMTP_PASSWORD in Render environment variables.", maskedEmail);
+            return;
         }
 
-        // Development/Test fallback logging when SMTP is not configured
-        log.info("Password reset link generated for [{}]: {}", recipientEmail, resetLink);
+        if (mailFrom == null || mailFrom.isBlank()) {
+            log.warn("Password reset requested for [{}] but sender address is missing: neither MAIL_FROM nor SMTP_USERNAME is set.", maskedEmail);
+            return;
+        }
+
+        try {
+            MimeMessage message = mailSender.get().createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(mailFrom, "NILEV Sanctuary");
+            helper.setTo(recipientEmail);
+            helper.setSubject("NILEV — Password Reset Request");
+
+            String htmlContent = buildResetEmailHtml(greetingName, resetLink);
+            helper.setText(htmlContent, true);
+
+            mailSender.get().send(message);
+            log.info("Password reset email successfully dispatched via SMTP to [{}]", maskedEmail);
+        } catch (Exception e) {
+            log.error("Failed to deliver password reset email to [{}] via SMTP: {}", maskedEmail, e.getMessage());
+        }
+    }
+
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return "unknown";
+        String[] parts = email.split("@", 2);
+        String name = parts[0];
+        String domain = parts[1];
+        if (name.length() <= 2) {
+            return name.charAt(0) + "*@" + domain;
+        }
+        return name.substring(0, 2) + "***@" + domain;
     }
 
     private String buildResetEmailHtml(String name, String resetLink) {

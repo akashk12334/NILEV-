@@ -35,16 +35,20 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
   mail:
-    host: ${SMTP_HOST:}
-    port: ${SMTP_PORT:587}
-    username: ${SMTP_USERNAME:}
-    password: ${SMTP_PASSWORD:}
+    host: ${SPRING_MAIL_HOST:${SMTP_HOST:}}
+    port: ${SPRING_MAIL_PORT:${SMTP_PORT:587}}
+    username: ${SPRING_MAIL_USERNAME:${SMTP_USERNAME:}}
+    password: ${SPRING_MAIL_PASSWORD:${SMTP_PASSWORD:}}
+    from: ${MAIL_FROM:${SMTP_FROM:${SMTP_USERNAME:}}}
     properties:
       mail:
         smtp:
           auth: ${SMTP_AUTH:true}
           starttls:
             enable: ${SMTP_STARTTLS:true}
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
