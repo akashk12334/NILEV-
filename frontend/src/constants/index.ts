@@ -24,4 +24,5 @@ export const ROUTES = {
   SURPRISES: "/surprises",
   ANALYTICS: "/analytics",
   SETTINGS: "/settings",
+  ADMIN: "/admin",
 } as const;

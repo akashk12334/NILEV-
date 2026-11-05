@@ -448,6 +448,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .avatarUrl(user.getAvatarUrl())
+                .role(user.getRole())
                 .active(user.isActive())
                 .lastLoginAt(user.getLastLoginAt())
                 .createdAt(user.getCreatedAt())

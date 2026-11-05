@@ -17,9 +17,11 @@ import {
   SurprisesPage,
   AnalyticsPage,
   SettingsPage,
+  AdminConsolePage,
   NotFoundPage,
 } from "../pages";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { AdminRoute } from "./AdminRoute";
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -49,6 +51,11 @@ export const AppRoutes: React.FC = () => {
           <Route path={ROUTES.SURPRISES} element={<SurprisesPage />} />
           <Route path={ROUTES.ANALYTICS} element={<AnalyticsPage />} />
           <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+
+          {/* Admin Protected Routes */}
+          <Route element={<AdminRoute />}>
+            <Route path={ROUTES.ADMIN} element={<AdminConsolePage />} />
+          </Route>
         </Route>
       </Route>
 

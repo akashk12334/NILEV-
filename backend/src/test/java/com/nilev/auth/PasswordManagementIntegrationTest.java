@@ -517,4 +517,70 @@ class PasswordManagementIntegrationTest extends BaseIntegrationTest {
                         .content(objectMapper.writeValueAsString(new LoginRequest("alex@nilev.space", "OriginalSecret123!", false))))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    @DisplayName("15. Admin can list all requests including completed, rejected, and pending via /api/admin/password-resets/all")
+    void testAdmin_ListAllRequests() throws Exception {
+        User user = User.builder()
+                .name("Alex Rivera")
+                .email("alex@nilev.space")
+                .passwordHash(passwordEncoder.encode("Secret123!"))
+                .active(true)
+                .role("USER")
+                .build();
+        userRepo.save(user);
+
+        User admin = User.builder()
+                .name("Sanctuary Admin")
+                .email("admin@nilev.space")
+                .passwordHash(passwordEncoder.encode("AdminSecret123!"))
+                .active(true)
+                .role("ADMIN")
+                .build();
+        userRepo.save(admin);
+
+        String adminToken = jwtTokenProvider.generateAccessToken(admin.getId(), admin.getEmail());
+
+        // Create 1 pending and 1 rejected request
+        PasswordResetRequest req1 = PasswordResetRequest.builder()
+                .user(user)
+                .proposedPasswordHash(passwordEncoder.encode("Pass1!"))
+                .status("PENDING")
+                .createdAt(Instant.now().minusSeconds(100))
+                .expiresAt(Instant.now().plus(Duration.ofHours(24)))
+                .build();
+        PasswordResetRequest req2 = PasswordResetRequest.builder()
+                .user(user)
+                .proposedPasswordHash(passwordEncoder.encode("Pass2!"))
+                .status("REJECTED")
+                .createdAt(Instant.now().minusSeconds(200))
+                .expiresAt(Instant.now().plus(Duration.ofHours(24)))
+                .build();
+        passwordResetRequestRepo.saveAll(List.of(req1, req2));
+
+        mockMvc.perform(get("/api/admin/password-resets/all")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data", hasSize(2)));
+    }
+
+    @Test
+    @DisplayName("16. User login response exposes role for frontend authorization checks")
+    void testLoginResponse_ExposesRole() throws Exception {
+        User admin = User.builder()
+                .name("Sanctuary Admin")
+                .email("admin_role@nilev.space")
+                .passwordHash(passwordEncoder.encode("AdminSecret123!"))
+                .active(true)
+                .role("ADMIN")
+                .build();
+        userRepo.save(admin);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest("admin_role@nilev.space", "AdminSecret123!", false))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.user.role", is("ADMIN")));
+    }
 }

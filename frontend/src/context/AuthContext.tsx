@@ -17,6 +17,7 @@ export interface AuthContextType {
   user: UserResponse | null;
   token: string | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<AuthResponse>;
   register: (data: RegisterRequest) => Promise<AuthResponse>;
@@ -169,10 +170,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const isAdmin = Boolean(
+    user?.role &&
+      (user.role.trim().toUpperCase() === "ADMIN" ||
+        user.role.trim().toUpperCase() === "ROLE_ADMIN")
+  );
+
   const value: AuthContextType = {
     user,
     token,
     isAuthenticated: Boolean(token && user),
+    isAdmin,
     isLoading,
     login,
     register,

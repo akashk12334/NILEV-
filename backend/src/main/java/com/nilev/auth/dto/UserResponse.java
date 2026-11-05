@@ -14,6 +14,7 @@ public class UserResponse {
     private String nickname;
     private String avatarUrl;
     private String profileImageUrl;
+    private String role;
     private Instant createdAt;
     private Instant updatedAt;
     private Instant lastLoginAt;
@@ -24,10 +25,15 @@ public class UserResponse {
 
     public UserResponse(Long id, String name, String email, String avatarUrl,
                         Instant createdAt, Instant updatedAt, Instant lastLoginAt, boolean active) {
-        this(id, name, email, null, avatarUrl, createdAt, updatedAt, lastLoginAt, active);
+        this(id, name, email, null, avatarUrl, null, createdAt, updatedAt, lastLoginAt, active);
     }
 
     public UserResponse(Long id, String name, String email, String nickname, String avatarUrl,
+                        Instant createdAt, Instant updatedAt, Instant lastLoginAt, boolean active) {
+        this(id, name, email, nickname, avatarUrl, null, createdAt, updatedAt, lastLoginAt, active);
+    }
+
+    public UserResponse(Long id, String name, String email, String nickname, String avatarUrl, String role,
                         Instant createdAt, Instant updatedAt, Instant lastLoginAt, boolean active) {
         this.id = id;
         this.name = name;
@@ -35,6 +41,7 @@ public class UserResponse {
         this.nickname = nickname;
         this.avatarUrl = avatarUrl;
         this.profileImageUrl = avatarUrl;
+        this.role = role;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.lastLoginAt = lastLoginAt;
@@ -80,6 +87,14 @@ public class UserResponse {
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
         this.avatarUrl = profileImageUrl;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public String getAvatarUrl() {
@@ -134,6 +149,7 @@ public class UserResponse {
         private String nickname;
         private String avatarUrl;
         private String profileImageUrl;
+        private String role;
         private Instant createdAt;
         private Instant updatedAt;
         private Instant lastLoginAt;
@@ -171,6 +187,11 @@ public class UserResponse {
             return this;
         }
 
+        public Builder role(String role) {
+            this.role = role;
+            return this;
+        }
+
         public Builder createdAt(Instant createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -192,7 +213,7 @@ public class UserResponse {
         }
 
         public UserResponse build() {
-            return new UserResponse(id, name, email, nickname, avatarUrl != null ? avatarUrl : profileImageUrl, createdAt, updatedAt, lastLoginAt, active);
+            return new UserResponse(id, name, email, nickname, avatarUrl != null ? avatarUrl : profileImageUrl, role, createdAt, updatedAt, lastLoginAt, active);
         }
     }
 }

@@ -146,6 +146,13 @@ export const authService = {
     return res.data.data;
   },
 
+  async getAllAdminPasswordResets(): Promise<AdminPasswordResetResponse[]> {
+    const res = await apiClient.get<ApiResponse<AdminPasswordResetResponse[]>>(
+      ENDPOINTS.ADMIN.PASSWORD_RESETS_ALL
+    );
+    return res.data.data;
+  },
+
   async approveAdminPasswordReset(id: number | string, data: AdminApprovalRequest): Promise<string> {
     const res = await apiClient.post<ApiResponse<void>>(
       ENDPOINTS.ADMIN.PASSWORD_RESET_APPROVE(id),

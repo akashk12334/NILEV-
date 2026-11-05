@@ -14,6 +14,7 @@ import {
   Heart,
   X,
   Users2,
+  ShieldCheck,
 } from "lucide-react";
 import { ROUTES } from "../../constants";
 import { cn } from "../../utils/cn";
@@ -108,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = React.useMemo(() => {
     const pendingHabitsToday = habits.filter((h) => !h.completedToday).length;
 
-    return baseNavItems.map((item) => {
+    const items = baseNavItems.map((item) => {
       // Partner badge: only show if actually connected
       if (item.href === ROUTES.PARTNER && isConnected) {
         return { ...item, badge: "Couple", badgeVariant: "violet" as const };
@@ -143,7 +144,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       return item;
     });
-  }, [isConnected, habits, companion?.level, unopenedSurprises]);
+
+    const isUserAdmin = Boolean(
+      user?.role &&
+        (user.role.trim().toUpperCase() === "ADMIN" ||
+          user.role.trim().toUpperCase() === "ROLE_ADMIN")
+    );
+
+    if (isUserAdmin) {
+      items.push({
+        label: "Admin Console",
+        href: ROUTES.ADMIN,
+        icon: ShieldCheck,
+        badge: "Admin",
+        badgeVariant: "rose" as const,
+      });
+    }
+
+    return items;
+  }, [isConnected, habits, companion?.level, unopenedSurprises, user?.role]);
 
   // Close mobile drawer on route change
   React.useEffect(() => {
